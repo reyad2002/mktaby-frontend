@@ -1,0 +1,255 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1150" viewBox="0 0 1800 1150">
+  <defs>
+    <style>
+      .box { fill: none; stroke: #666; stroke-width: 2; }
+      .thin { fill: none; stroke: #999; stroke-width: 1.5; }
+      .fill { fill: #f6f6f6; stroke: #666; stroke-width: 2; }
+      .title { font: 700 16px Arial, sans-serif; fill: #222; }
+      .txt { font: 13px Arial, sans-serif; fill: #333; }
+      .muted { font: 12px Arial, sans-serif; fill: #666; }
+      .chip { fill: none; stroke: #777; stroke-width: 1.5; rx: 10; ry: 10; }
+    </style>
+  </defs>
+
+  <!-- ====== Canvas title ====== -->
+  <text x="20" y="30" class="title">Lawyer System - Admin Wireframe (MUI/Ant-style) | RTL-ready</text>
+
+  <!-- Layout constants -->
+  <!-- Frame size: 560x360, padding 20, gap 30 -->
+  <!-- Row 1: x=20,610,1200 | y=60 -->
+  <!-- Row 2: x=20,610,1200 | y=450 -->
+  <!-- Row 3: x=20,610,1200 | y=840 (we'll only use 2 rows to keep it readable) -->
+
+  <!-- ===================== Frame 1: App Shell ===================== -->
+  <g transform="translate(20,60)">
+    <rect class="box" x="0" y="0" width="560" height="360" rx="10"/>
+    <text class="title" x="18" y="28">1) App Shell (Layout ثابت)</text>
+
+    <!-- topbar -->
+    <rect class="thin" x="20" y="45" width="520" height="42" rx="8"/>
+    <text class="muted" x="35" y="72">Topbar: Logo | بحث | إشعارات | مستخدم</text>
+
+    <!-- sidebar (RTL on the right) -->
+    <rect class="thin" x="390" y="95" width="150" height="245" rx="8"/>
+    <text class="muted" x="405" y="118">Sidebar</text>
+    <text class="muted" x="405" y="140">Dashboard</text>
+    <text class="muted" x="405" y="160">Cases</text>
+    <text class="muted" x="405" y="180">Clients</text>
+    <text class="muted" x="405" y="200">Calendar</text>
+    <text class="muted" x="405" y="220">Sessions</text>
+    <text class="muted" x="405" y="240">Tasks</text>
+    <text class="muted" x="405" y="260">Files</text>
+    <text class="muted" x="405" y="280">Users/Perm</text>
+    <text class="muted" x="405" y="300">Office</text>
+
+    <!-- content area -->
+    <rect class="thin" x="20" y="95" width="360" height="245" rx="8"/>
+    <text class="muted" x="35" y="118">Main Content Area</text>
+    <rect class="thin" x="35" y="135" width="330" height="60" rx="8"/>
+    <rect class="thin" x="35" y="205" width="160" height="60" rx="8"/>
+    <rect class="thin" x="205" y="205" width="160" height="60" rx="8"/>
+    <rect class="thin" x="35" y="275" width="330" height="50" rx="8"/>
+  </g>
+
+  <!-- ===================== Frame 2: Dashboard ===================== -->
+  <g transform="translate(610,60)">
+    <rect class="box" x="0" y="0" width="560" height="360" rx="10"/>
+    <text class="title" x="18" y="28">2) Dashboard</text>
+
+    <!-- page header -->
+    <text class="muted" x="20" y="60">Page Header: Dashboard + quick actions</text>
+
+    <!-- KPI cards -->
+    <rect class="thin" x="20" y="75" width="250" height="60" rx="10"/>
+    <rect class="thin" x="290" y="75" width="250" height="60" rx="10"/>
+    <rect class="thin" x="20" y="145" width="250" height="60" rx="10"/>
+    <rect class="thin" x="290" y="145" width="250" height="60" rx="10"/>
+    <text class="muted" x="35" y="105">KPIs: قضايا / جلسات اليوم</text>
+    <text class="muted" x="305" y="105">KPIs: Tasks متأخرة</text>
+    <text class="muted" x="35" y="175">KPIs: إشعارات</text>
+    <text class="muted" x="305" y="175">KPIs: قضايا مفتوحة</text>
+
+    <!-- bottom: sessions + tasks -->
+    <rect class="thin" x="20" y="220" width="330" height="120" rx="10"/>
+    <rect class="thin" x="365" y="220" width="175" height="120" rx="10"/>
+    <text class="muted" x="35" y="245">Upcoming Sessions (جدول صغير)</text>
+    <line class="thin" x1="35" y1="255" x2="335" y2="255"/>
+    <text class="muted" x="35" y="278">• 10:00 - Case #15 - Court A</text>
+    <text class="muted" x="35" y="300">• 12:00 - Case #22 - Court B</text>
+
+    <text class="muted" x="380" y="245">Urgent Tasks</text>
+    <line class="thin" x1="380" y1="255" x2="525" y2="255"/>
+    <text class="muted" x="380" y="278">• Task #31</text>
+    <text class="muted" x="380" y="300">• Task #22</text>
+  </g>
+
+  <!-- ===================== Frame 3: Cases List ===================== -->
+  <g transform="translate(1200,60)">
+    <rect class="box" x="0" y="0" width="560" height="360" rx="10"/>
+    <text class="title" x="18" y="28">3) Cases (قائمة القضايا)</text>
+
+    <!-- header + add -->
+    <rect class="thin" x="20" y="45" width="120" height="34" rx="8"/>
+    <text class="muted" x="30" y="67">+ قضية جديدة</text>
+
+    <!-- filters row -->
+    <rect class="thin" x="150" y="45" width="390" height="34" rx="8"/>
+    <text class="muted" x="160" y="67">Filters: Status | Type | Court | Client | Search</text>
+
+    <!-- table -->
+    <rect class="thin" x="20" y="90" width="520" height="230" rx="10"/>
+    <line class="thin" x1="20" y1="120" x2="540" y2="120"/>
+    <text class="muted" x="35" y="112">ID</text>
+    <text class="muted" x="90" y="112">Case</text>
+    <text class="muted" x="250" y="112">Client</text>
+    <text class="muted" x="360" y="112">Court</text>
+    <text class="muted" x="455" y="112">Status</text>
+
+    <!-- rows -->
+    <line class="thin" x1="20" y1="155" x2="540" y2="155"/>
+    <line class="thin" x1="20" y1="190" x2="540" y2="190"/>
+    <line class="thin" x1="20" y1="225" x2="540" y2="225"/>
+    <line class="thin" x1="20" y1="260" x2="540" y2="260"/>
+
+    <text class="muted" x="35" y="145">15</text>
+    <text class="muted" x="90" y="145">Case Name...</text>
+    <text class="muted" x="250" y="145">Client A</text>
+    <text class="muted" x="360" y="145">Court X</text>
+    <rect class="chip" x="445" y="132" width="70" height="20"/>
+    <text class="muted" x="458" y="147">Open</text>
+
+    <text class="muted" x="35" y="180">16</text>
+    <text class="muted" x="90" y="180">Case Name...</text>
+    <text class="muted" x="250" y="180">Client B</text>
+    <text class="muted" x="360" y="180">Court Y</text>
+    <rect class="chip" x="445" y="167" width="70" height="20"/>
+    <text class="muted" x="455" y="182">Closed</text>
+
+    <!-- pagination -->
+    <text class="muted" x="20" y="345">Pagination:  &lt; 1 2 3 &gt;</text>
+  </g>
+
+  <!-- ===================== Frame 4: Case Details (Tabs) ===================== -->
+  <g transform="translate(20,450)">
+    <rect class="box" x="0" y="0" width="560" height="360" rx="10"/>
+    <text class="title" x="18" y="28">4) Case Details (Tabs)</text>
+
+    <!-- header -->
+    <rect class="thin" x="20" y="45" width="520" height="42" rx="10"/>
+    <text class="muted" x="35" y="72">Case #15 | Client A | Court X | Status [Open ▾] | [Edit]</text>
+
+    <!-- tabs -->
+    <rect class="thin" x="20" y="95" width="520" height="36" rx="10"/>
+    <text class="muted" x="35" y="118">Tabs: Overview | Sessions | Tasks | Files | Stats</text>
+
+    <!-- content -->
+    <rect class="thin" x="20" y="145" width="520" height="195" rx="10"/>
+    <text class="muted" x="35" y="172">Overview</text>
+    <line class="thin" x1="35" y1="182" x2="525" y2="182"/>
+    <rect class="thin" x="35" y="195" width="240" height="50" rx="8"/>
+    <rect class="thin" x="285" y="195" width="240" height="50" rx="8"/>
+    <rect class="thin" x="35" y="255" width="490" height="70" rx="8"/>
+    <text class="muted" x="45" y="225">بيانات القضية</text>
+    <text class="muted" x="295" y="225">معلومات إضافية</text>
+    <text class="muted" x="45" y="295">Notes / Description</text>
+  </g>
+
+  <!-- ===================== Frame 5: Tasks (Table + Drawer) ===================== -->
+  <g transform="translate(610,450)">
+    <rect class="box" x="0" y="0" width="560" height="360" rx="10"/>
+    <text class="title" x="18" y="28">5) Tasks (Table + Drawer)</text>
+
+    <!-- header -->
+    <rect class="thin" x="20" y="45" width="110" height="34" rx="8"/>
+    <text class="muted" x="30" y="67">+ تاسك</text>
+
+    <rect class="thin" x="140" y="45" width="400" height="34" rx="8"/>
+    <text class="muted" x="150" y="67">Filters: Status | Priority | Date | Search</text>
+
+    <!-- table left -->
+    <rect class="thin" x="20" y="90" width="340" height="250" rx="10"/>
+    <line class="thin" x1="20" y1="120" x2="360" y2="120"/>
+    <text class="muted" x="35" y="112">Title</text>
+    <text class="muted" x="175" y="112">Priority</text>
+    <text class="muted" x="255" y="112">Status</text>
+
+    <line class="thin" x1="20" y1="155" x2="360" y2="155"/>
+    <line class="thin" x1="20" y1="190" x2="360" y2="190"/>
+    <line class="thin" x1="20" y1="225" x2="360" y2="225"/>
+
+    <text class="muted" x="35" y="145">Draft contract</text>
+    <text class="muted" x="175" y="145">High</text>
+    <text class="muted" x="255" y="145">ToDo</text>
+
+    <text class="muted" x="35" y="180">Call client</text>
+    <text class="muted" x="175" y="180">Med</text>
+    <text class="muted" x="255" y="180">Doing</text>
+
+    <text class="muted" x="35" y="215">Submit docs</text>
+    <text class="muted" x="175" y="215">High</text>
+    <text class="muted" x="255" y="215">Overdue</text>
+
+    <!-- drawer on the right -->
+    <rect class="fill" x="370" y="90" width="170" height="250" rx="10"/>
+    <text class="muted" x="385" y="115">Drawer: Task Details</text>
+    <rect class="thin" x="385" y="130" width="140" height="26" rx="6"/>
+    <text class="muted" x="390" y="148">Title</text>
+    <rect class="thin" x="385" y="165" width="140" height="55" rx="6"/>
+    <text class="muted" x="390" y="187">Description</text>
+    <rect class="thin" x="385" y="230" width="140" height="26" rx="6"/>
+    <text class="muted" x="390" y="248">Status ▾</text>
+    <rect class="thin" x="385" y="265" width="140" height="26" rx="6"/>
+    <text class="muted" x="390" y="283">Priority ▾</text>
+    <rect class="thin" x="385" y="300" width="68" height="28" rx="8"/>
+    <rect class="thin" x="457" y="300" width="68" height="28" rx="8"/>
+    <text class="muted" x="400" y="320">Save</text>
+    <text class="muted" x="470" y="320">Delete</text>
+  </g>
+
+  <!-- ===================== Frame 6: Files & Folders ===================== -->
+  <g transform="translate(1200,450)">
+    <rect class="box" x="0" y="0" width="560" height="360" rx="10"/>
+    <text class="title" x="18" y="28">6) Files & Folders</text>
+
+    <!-- actions -->
+    <rect class="thin" x="20" y="45" width="120" height="34" rx="8"/>
+    <text class="muted" x="30" y="67">Upload</text>
+    <rect class="thin" x="150" y="45" width="120" height="34" rx="8"/>
+    <text class="muted" x="165" y="67">+ Folder</text>
+
+    <!-- left tree (RTL would be right in real app, لكن هنا للتوضيح) -->
+    <rect class="thin" x="20" y="90" width="170" height="250" rx="10"/>
+    <text class="muted" x="35" y="115">Folder Tree</text>
+    <text class="muted" x="35" y="145">▾ القضايا</text>
+    <text class="muted" x="55" y="170">▾ Case #15</text>
+    <text class="muted" x="75" y="195">• مستندات</text>
+    <text class="muted" x="75" y="220">• جلسات</text>
+
+    <!-- files table -->
+    <rect class="thin" x="200" y="90" width="340" height="170" rx="10"/>
+    <line class="thin" x1="200" y1="120" x2="540" y2="120"/>
+    <text class="muted" x="215" y="112">File</text>
+    <text class="muted" x="360" y="112">Type</text>
+    <text class="muted" x="445" y="112">Actions</text>
+
+    <line class="thin" x1="200" y1="155" x2="540" y2="155"/>
+    <line class="thin" x1="200" y1="190" x2="540" y2="190"/>
+    <text class="muted" x="215" y="145">contract.pdf</text>
+    <text class="muted" x="360" y="145">PDF</text>
+    <text class="muted" x="445" y="145">👁 ⬇ 🗑</text>
+
+    <text class="muted" x="215" y="180">photo.png</text>
+    <text class="muted" x="360" y="180">IMG</text>
+    <text class="muted" x="445" y="180">👁 ⬇ 🗑</text>
+
+    <!-- metadata panel -->
+    <rect class="thin" x="200" y="270" width="340" height="70" rx="10"/>
+    <text class="muted" x="215" y="295">Metadata (selected file)</text>
+    <text class="muted" x="215" y="318">Size | UploadedBy | Date | Linked Case</text>
+  </g>
+
+  <!-- Footer note -->
+  <text x="20" y="1130" class="muted">
+    Notes: RTL in implementation = Sidebar يمين + Drawer يمين + جدول يبدأ من اليمين. Components: DataTable, Drawer, Tabs, Cards.
+  </text>
+</svg>

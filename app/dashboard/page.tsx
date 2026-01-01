@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
@@ -11,8 +13,18 @@ import {
 } from "lucide-react";
 
 import { fetchDashboardData } from "@/features/dashboard/apis/dashboardApi";
+import { getAccessToken } from "@/lib/authTokens";
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) {
+      router.push("/auth/login");
+    }
+  }, [router]);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardData,
@@ -74,7 +86,7 @@ export default function DashboardPage() {
   return (
     <section className="space-y-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 border border-blue-400/30 shadow-2xl shadow-blue-900/30 p-6 sm:p-8 text-white">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 border border-blue-400/30 shadow-2xl shadow-blue-900/30 p-6 sm:p-8 text-white">
         <div
           className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl"
           aria-hidden
@@ -117,9 +129,7 @@ export default function DashboardPage() {
                     {card.value.toLocaleString("ar-EG")}
                   </p>
                 </div>
-                <div
-                  className={`p-3 rounded-xl bg-gradient-to-br ${card.color}`}
-                >
+                <div className={`p-3 rounded-xl bg-linear-to-br ${card.color}`}>
                   <card.icon className="text-white" size={24} />
                 </div>
               </div>

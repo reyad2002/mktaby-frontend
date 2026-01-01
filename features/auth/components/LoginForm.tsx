@@ -67,7 +67,7 @@ export default function LoginForm() {
               errors.email ? "border-red-500" : "border-gray-300"
             }`}
             placeholder="البريد الإلكتروني"
-            value={"mo7amed6102003@gmail.com"}
+            value={"mo7amed6102003@gmail.com"} //reyadmohamed631@gmail.com 123456789  \\mo7amed6102003@gmail.com 12345678
           />
           <Mail className="absolute left-3 top-2.5 text-gray-400" size={20} />
         </div>

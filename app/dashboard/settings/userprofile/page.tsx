@@ -20,7 +20,11 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { getCurrentUser, setProfileImage } from "@/features/users/apis/usersApi";
+import {
+  getCurrentUser,
+  setProfileImage,
+} from "@/features/users/apis/usersApi";
+import { getPermissionById } from "@/features/permissions/apis/permissionsApi";
 import EditProfileForm from "@/features/userprofile/components/EditProfileForm";
 
 type TabKey = "basic" | "meta";
@@ -32,18 +36,17 @@ export default function UserProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    isFetching,
-  } = useQuery({
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ["currentUser"],
     queryFn: getCurrentUser,
   });
 
   const user = data?.data;
+
+  // Note: Permission details API returns 403 Forbidden
+  // User already has permission name in user.userPermissionName
+  // If detailed permission data is needed, backend needs to provide it with user data
+  // or grant access to the Permission endpoint
 
   const createdAtText = useMemo(() => {
     if (!user?.createdAt) return "—";
@@ -219,7 +222,10 @@ export default function UserProfilePage() {
                       title="تغيير الصورة"
                     >
                       {uploadImageMutation.isPending ? (
-                        <Loader2 className="animate-spin text-blue-600" size={18} />
+                        <Loader2
+                          className="animate-spin text-blue-600"
+                          size={18}
+                        />
                       ) : (
                         <Camera className="text-gray-800" size={18} />
                       )}
@@ -247,14 +253,33 @@ export default function UserProfilePage() {
                 <h2 className="text-lg font-semibold text-gray-900">
                   {user.name}
                 </h2>
-                <p className="text-sm text-gray-600 break-words">{user.email}</p>
+                <p className="text-sm text-gray-600 wrap-break-word">
+                  {user.email}
+                </p>
               </div>
 
               <div className="mt-5 space-y-3">
-                <KeyLine icon={Building2} label="المكتب" value={user.officeName || "—"} />
-                <KeyLine icon={Phone} label="رقم الهاتف" value={user.phoneNumber || "—"} dir="ltr" />
-                <KeyLine icon={Shield} label="الصلاحية" value={user.userPermissionName || "—"} />
-                <KeyLine icon={Calendar} label="تاريخ الإنشاء" value={createdAtText} />
+                <KeyLine
+                  icon={Building2}
+                  label="المكتب"
+                  value={user.officeName || "—"}
+                />
+                <KeyLine
+                  icon={Phone}
+                  label="رقم الهاتف"
+                  value={user.phoneNumber || "—"}
+                  dir="ltr"
+                />
+                <KeyLine
+                  icon={Shield}
+                  label="الصلاحية"
+                  value={user.userPermissionName || "—"}
+                />
+                <KeyLine
+                  icon={Calendar}
+                  label="تاريخ الإنشاء"
+                  value={createdAtText}
+                />
               </div>
             </div>
           </div>
@@ -313,7 +338,11 @@ export default function UserProfilePage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field icon={User} label="الاسم" value={user.name} />
-                    <Field icon={Mail} label="البريد الإلكتروني" value={user.email} />
+                    <Field
+                      icon={Mail}
+                      label="البريد الإلكتروني"
+                      value={user.email}
+                    />
                     <Field
                       icon={Phone}
                       label="رقم الهاتف"
@@ -339,10 +368,26 @@ export default function UserProfilePage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <StatCard icon={Hash} title="معرف المستخدم" value={`#${user.id}`} />
-                    <StatCard icon={Calendar} title="تاريخ الإنشاء" value={createdAtText} />
-                    <StatCard icon={Shield} title="الصلاحية" value={user.userPermissionName || "—"} />
-                    <StatCard icon={Building2} title="المكتب" value={user.officeName || "—"} />
+                    <StatCard
+                      icon={Hash}
+                      title="معرف المستخدم"
+                      value={`#${user.id}`}
+                    />
+                    <StatCard
+                      icon={Calendar}
+                      title="تاريخ الإنشاء"
+                      value={createdAtText}
+                    />
+                    <StatCard
+                      icon={Shield}
+                      title="الصلاحية"
+                      value={user.userPermissionName || "—"}
+                    />
+                    <StatCard
+                      icon={Building2}
+                      title="المكتب"
+                      value={user.officeName || "—"}
+                    />
                   </div>
                 </div>
               )}
@@ -421,7 +466,10 @@ function KeyLine({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-gray-600">{label}</p>
-        <p className="text-sm font-semibold text-gray-900 break-words" dir={dir}>
+        <p
+          className="text-sm font-semibold text-gray-900 break-words"
+          dir={dir}
+        >
           {value}
         </p>
       </div>

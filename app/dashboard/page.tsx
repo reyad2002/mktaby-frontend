@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
@@ -13,18 +11,8 @@ import {
 } from "lucide-react";
 
 import { fetchDashboardData } from "@/features/dashboard/apis/dashboardApi";
-import { getAccessToken } from "@/lib/authTokens";
 
 export default function DashboardPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      router.push("/auth/login");
-    }
-  }, [router]);
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardData,

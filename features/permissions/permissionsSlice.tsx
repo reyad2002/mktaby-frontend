@@ -1,5 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
-const initialState = {
+import { PermissionDetail } from "./types/permissionTypes";
+
+interface PermissionsState {
+  permissions: PermissionDetail;
+}
+
+const initialState: PermissionsState = {
   permissions: {
     id: 0,
     name: "",
@@ -14,15 +20,25 @@ const initialState = {
     dmlTaskPermissions: 0,
   },
 };
+
 const permissionsSlice = createSlice({
   name: "permissions",
   initialState,
   reducers: {
-    setPermissions(state, action) {
+    setPermissions(state, action: { payload: PermissionDetail }) {
       state.permissions = action.payload;
+    },
+    clearPermissions(state) {
+      state.permissions = initialState.permissions;
     },
   },
 });
 
-export const { setPermissions } = permissionsSlice.actions;
+export const { setPermissions, clearPermissions } = permissionsSlice.actions;
+
+// Selector to get current user permissions
+export const selectUserPermissions = (state: {
+  permissions: PermissionsState;
+}) => state.permissions.permissions;
+
 export default permissionsSlice.reducer;

@@ -31,4 +31,13 @@ const userProfileSlice = createSlice({
   },
 });
 export const { setUserProfile } = userProfileSlice.actions;
+
+// Selector to get user role
+export const selectUserRole = (state: { userProfile: typeof initialState }) =>
+  state.userProfile.role;
+
+export const selectUserProfile = (state: {
+  userProfile: typeof initialState;
+}) => state.userProfile;
+
 export default userProfileSlice.reducer;

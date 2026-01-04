@@ -69,7 +69,7 @@ export default function LoginForm() {
             placeholder="البريد الإلكتروني"
             value={"mo7amed6102003@gmail.com"} //reyadmohamed631@gmail.com 123456789  \\mo7amed6102003@gmail.com 12345678
           />
-          <Mail className="absolute left-3 top-2.5 text-gray-400" size={20} />
+          <Mail className="absolute left-3 top-2.5 text-gray-400" size={20}/>
         </div>
         {errors.email && (
           <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>

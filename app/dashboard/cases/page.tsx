@@ -15,6 +15,11 @@ import {
   RotateCcw,
   Eye,
   Pencil,
+  RefreshCw,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Info,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -105,9 +110,12 @@ function ModalShell({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl border border-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">
             {title}
           </h2>
@@ -123,6 +131,64 @@ function ModalShell({
         <div className="p-6">{children}</div>
       </div>
     </div>
+  );
+}
+
+/** Icon Button (Premium) */
+function IconButton({
+  title,
+  onClick,
+  disabled,
+  variant = "neutral",
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: "neutral" | "green" | "orange" | "red" | "blue" | "purple";
+  children: React.ReactNode;
+}) {
+  const variants: Record<string, string> = {
+    neutral:
+      "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300",
+    blue: "border-blue-200/70 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300",
+    green:
+      "border-emerald-200/70 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300",
+    orange:
+      "border-orange-200/70 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300",
+    red: "border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300",
+    purple:
+      "border-purple-200/70 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300",
+  };
+
+  const glow: Record<string, string> = {
+    neutral: "hover:shadow-sm",
+    blue: "hover:shadow-[0_10px_25px_-15px_rgba(59,130,246,0.7)]",
+    green: "hover:shadow-[0_10px_25px_-15px_rgba(16,185,129,0.7)]",
+    orange: "hover:shadow-[0_10px_25px_-15px_rgba(249,115,22,0.7)]",
+    red: "hover:shadow-[0_10px_25px_-15px_rgba(239,68,68,0.7)]",
+    purple: "hover:shadow-[0_10px_25px_-15px_rgba(168,85,247,0.7)]",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={[
+        "group inline-flex items-center justify-center w-10 h-10 rounded-2xl border transition-all",
+        "focus:outline-none focus:ring-4 focus:ring-blue-200/70",
+        "active:scale-[0.98]",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        variants[variant],
+        glow[variant],
+      ].join(" ")}
+    >
+      <span className="transition-transform group-hover:scale-[1.06]">
+        {children}
+      </span>
+    </button>
   );
 }
 
@@ -205,6 +271,7 @@ export default function CasesPage() {
   const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["cases", queryParams],
     queryFn: () => getCases(queryParams),
+    staleTime: 10_000,
   });
 
   const cases: CaseListItem[] = data?.data?.data ?? [];
@@ -220,7 +287,7 @@ export default function CasesPage() {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      PageNumber: key === "Search" ? 1 : prev.PageNumber,
+      PageNumber: key === "Search" || key === "PageSize" ? 1 : prev.PageNumber,
     }));
   };
 
@@ -256,205 +323,250 @@ export default function CasesPage() {
   };
 
   return (
-    <section className="space-y-6">
-      {/* Header */}
+    <section className="space-y-6 relative">
+      {/* Soft premium background */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-white" />
+      </div>
+
       <PageHeader
         title="القضايا"
         subtitle="إدارة ومتابعة القضايا والملفات القانونية."
         icon={Briefcase}
         isFetching={isFetching}
         countLabel={`${totalCount} قضية`}
-        // onRefresh={refetch}
         onAdd={() => setShowAddCaseModal(true)}
         addButtonLabel="إضافة قضية"
       />
 
-      {/* Filters toolbar */}
-      <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <SlidersHorizontal size={16} className="text-gray-500" />
+      {/* Filters */}
+      <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
+          {/* Accent line */}
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500" />
+
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+              <SlidersHorizontal size={16} className="text-blue-700" />
+            </span>
             فلاتر البحث
+            <span className="text-gray-500 font-normal">
+              • {totalCount} نتيجة
+            </span>
           </div>
 
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200"
-          >
-            إعادة ضبط
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+              تحديث
+            </button>
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 bg-white"
+            >
+              إعادة ضبط
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-          {/* Search */}
-          <div className="lg:col-span-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              بحث
-            </label>
-            <div className="relative">
-              <Search
-                size={16}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                value={filters.Search ?? ""}
-                onChange={(e) => updateFilter("Search", e.target.value)}
-                placeholder="ابحث باسم القضية..."
-                className="w-full pr-9 pl-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+        <div className="p-4 sm:p-5">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Search */}
+            <div className="lg:col-span-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                بحث
+              </label>
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  value={filters.Search ?? ""}
+                  onChange={(e) => updateFilter("Search", e.target.value)}
+                  placeholder="ابحث باسم القضية..."
+                  className="w-full pr-9 pl-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Case Type */}
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              نوع القضية
-            </label>
-            <select
-              value={filters.CaseType || ""}
-              onChange={(e) =>
-                updateFilter(
-                  "CaseType",
-                  (e.target.value as CaseTypeValues) || undefined
-                )
-              }
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              <option value="">الكل</option>
-              {caseTypes.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Case Status */}
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              حالة القضية
-            </label>
-            <select
-              value={filters.CaseStatus || ""}
-              onChange={(e) =>
-                updateFilter(
-                  "CaseStatus",
-                  (e.target.value as CaseStatusValues) || undefined
-                )
-              }
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              <option value="">الكل</option>
-              {caseStatuses.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort */}
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              الترتيب
-            </label>
-            <select
-              value={filters.Sort || ""}
-              onChange={(e) => updateFilter("Sort", e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Page size */}
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              عدد العناصر
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {[5, 10, 20, 50].map((size) => {
-                const active = pageSize === size;
-                return (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => updateFilter("PageSize", size)}
-                    className={`px-3 py-2 text-sm rounded-xl transition-all border ${
-                      active
-                        ? "bg-blue-50 text-blue-700 border-blue-200"
-                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                );
-              })}
+            {/* Case Type */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                نوع القضية
+              </label>
+              <div className="relative">
+                <select
+                  value={filters.CaseType || ""}
+                  onChange={(e) =>
+                    updateFilter(
+                      "CaseType",
+                      (e.target.value as CaseTypeValues) || undefined
+                    )
+                  }
+                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+                >
+                  <option value="">الكل</option>
+                  {caseTypes.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Active/Deleted toggle */}
-          <div className="lg:col-span-12">
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <div className="flex gap-2">
-                {[
-                  { value: false, label: "نشط" },
-                  { value: true, label: "محذوف" },
-                ].map((opt) => {
-                  const active = filters.IsDeleted === opt.value;
+            {/* Case Status */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                حالة القضية
+              </label>
+              <div className="relative">
+                <select
+                  value={filters.CaseStatus || ""}
+                  onChange={(e) =>
+                    updateFilter(
+                      "CaseStatus",
+                      (e.target.value as CaseStatusValues) || undefined
+                    )
+                  }
+                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+                >
+                  <option value="">الكل</option>
+                  {caseStatuses.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
+            </div>
+
+            {/* Sort */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                الترتيب
+              </label>
+              <div className="relative">
+                <select
+                  value={filters.Sort || ""}
+                  onChange={(e) => updateFilter("Sort", e.target.value)}
+                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
+            </div>
+
+            {/* Page size */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                عدد العناصر
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[5, 10, 20, 50].map((size) => {
+                  const active = pageSize === size;
                   return (
                     <button
-                      key={String(opt.value)}
+                      key={size}
                       type="button"
-                      onClick={() => updateFilter("IsDeleted", opt.value)}
-                      className={`rounded-xl px-4 py-2 text-sm transition-all border ${
+                      onClick={() => updateFilter("PageSize", size)}
+                      className={`px-3 py-2 text-sm rounded-xl transition-all border ${
                         active
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
                           : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                       }`}
                     >
-                      {opt.label}
+                      {size}
                     </button>
                   );
                 })}
               </div>
+            </div>
 
-              {isError && (
-                <div className="text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-                  حدث خطأ: {error instanceof Error ? error.message : ""}
+            {/* Active/Deleted toggle + Error */}
+            <div className="lg:col-span-12">
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex gap-2">
+                  {[
+                    { value: false, label: "نشط" },
+                    { value: true, label: "محذوف" },
+                  ].map((opt) => {
+                    const active = filters.IsDeleted === opt.value;
+                    return (
+                      <button
+                        key={String(opt.value)}
+                        type="button"
+                        onClick={() => updateFilter("IsDeleted", opt.value)}
+                        className={`rounded-xl px-4 py-2 text-sm transition-all border ${
+                          active
+                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+
+                {isError && (
+                  <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
+                    <Info size={16} />
+                    حدث خطأ: {error instanceof Error ? error.message : ""}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-b from-gray-50 to-white sticky top-0 z-10">
               <tr className="text-right text-xs font-semibold text-gray-700">
-                <th className="px-4 py-3">رقم القضية</th>
+                <th className="px-4 py-3 whitespace-nowrap">رقم القضية</th>
                 <th className="px-4 py-3">الاسم</th>
-                <th className="px-4 py-3">النوع</th>
-                <th className="px-4 py-3">الحالة</th>
-                <th className="px-4 py-3">العميل</th>
-                <th className="px-4 py-3">المحكمة</th>
-                <th className="px-4 py-3">تاريخ الفتح</th>
-                <th className="px-4 py-3">الإجراءات</th>
+                <th className="px-4 py-3 whitespace-nowrap">النوع</th>
+                <th className="px-4 py-3 whitespace-nowrap">الحالة</th>
+                <th className="px-4 py-3 whitespace-nowrap">العميل</th>
+                <th className="px-4 py-3 whitespace-nowrap">المحكمة</th>
+                <th className="px-4 py-3 whitespace-nowrap">تاريخ الفتح</th>
+                <th className="px-4 py-3 whitespace-nowrap">الإجراءات</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-200 bg-white">
               {isLoading ? (
-                [...Array(6)].map((_, idx) => (
+                [...Array(8)].map((_, idx) => (
                   <tr key={idx} className="animate-pulse">
                     {[...Array(8)].map((__, cellIdx) => (
                       <td key={cellIdx} className="px-4 py-4">
@@ -465,46 +577,61 @@ export default function CasesPage() {
                 ))
               ) : cases.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-10 text-center text-gray-500"
-                  >
-                    لا توجد قضايا مطابقة.
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                    <div className="mx-auto max-w-sm">
+                      <div className="w-12 h-12 rounded-2xl border border-gray-200 bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                        <Briefcase className="text-gray-500" size={20} />
+                      </div>
+                      <div className="font-medium text-gray-700 mb-1">
+                        لا توجد نتائج
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        جرّب تغيير البحث أو الفلاتر.
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                cases.map((caseItem) => (
+                cases.map((caseItem, index) => (
                   <tr
                     key={caseItem.id}
-                    className="text-sm text-gray-700 hover:bg-gray-50/60 transition-colors"
+                    className={`text-sm text-gray-700 transition-colors ${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
+                    } hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-transparent`}
                   >
-                    <td className="px-4 py-4 font-semibold text-blue-700">
+                    <td className="px-4 py-4 font-semibold text-blue-700 whitespace-nowrap">
                       {caseItem.caseNumber}
                     </td>
 
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">
-                          {caseItem.name}
-                        </span>
-                        {caseItem.isPrivate && (
-                          <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
-                            <Lock size={12} />
-                            خاصة
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900 truncate max-w-[340px]">
+                            {caseItem.name}
                           </span>
-                        )}
+
+                          {caseItem.isPrivate && (
+                            <span className="inline-flex items-center gap-1 rounded-xl border border-amber-200/70 bg-gradient-to-br from-amber-50 to-orange-50 px-2 py-0.5 text-xs text-amber-800">
+                              <Lock size={12} />
+                              خاصة
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          ID: {caseItem.id}
+                        </div>
                       </div>
                     </td>
 
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-800 border border-blue-200/60">
                         {caseItem.caseType.label}
                       </span>
                     </td>
 
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg border ${getStatusColor(
+                        className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-xl border ${getStatusColor(
                           caseItem.caseStatus.value
                         )}`}
                       >
@@ -512,92 +639,89 @@ export default function CasesPage() {
                       </span>
                     </td>
 
-                    <td className="px-4 py-4">{caseItem.clientName}</td>
-                    <td className="px-4 py-4">{caseItem.courtName}</td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {caseItem.clientName || "—"}
+                    </td>
 
-                    <td className="px-4 py-4 text-gray-600">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {caseItem.courtName || "—"}
+                    </td>
+
+                    <td className="px-4 py-4 text-gray-600 whitespace-nowrap">
                       {formatDateAr(caseItem.openedAt)}
                     </td>
 
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
+                        <IconButton
+                          title="عرض"
+                          variant="blue"
                           onClick={() =>
                             router.push(`/dashboard/cases/${caseItem.id}`)
                           }
-                          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                          title="عرض"
                         >
-                          <Eye size={14} />
-                          عرض
-                        </button>
+                          <Eye size={16} />
+                        </IconButton>
 
-                        <button
-                          type="button"
+                        <IconButton
+                          title="تعديل"
+                          variant="purple"
                           onClick={() => {
                             setEditCaseId(caseItem.id);
                             setShowEditModal(true);
                           }}
-                          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                          title="تعديل"
                         >
-                          <Pencil size={14} />
-                          تعديل
-                        </button>
+                          <Pencil size={16} />
+                        </IconButton>
 
                         {filters.IsDeleted ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleRestore(caseItem.id, caseItem.name)
-                            }
-                            disabled={restoreMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-xs text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50"
-                            title="استعادة"
-                          >
-                            {restoreMutation.isPending ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <RotateCcw size={14} />
-                            )}
-                            استعادة
-                          </button>
+                          <>
+                            <IconButton
+                              title="استعادة"
+                              variant="green"
+                              disabled={restoreMutation.isPending}
+                              onClick={() =>
+                                handleRestore(caseItem.id, caseItem.name)
+                              }
+                            >
+                              {restoreMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <RotateCcw size={16} />
+                              )}
+                            </IconButton>
+
+                            <IconButton
+                              title="حذف نهائي"
+                              variant="red"
+                              disabled={hardDeleteMutation.isPending}
+                              onClick={() =>
+                                handleHardDelete(caseItem.id, caseItem.name)
+                              }
+                            >
+                              {hardDeleteMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={16} />
+                              )}
+                            </IconButton>
+                          </>
                         ) : (
-                          <button
-                            type="button"
+                          <IconButton
+                            title="أرشفة"
+                            variant="orange"
+                            disabled={softDeleteMutation.isPending}
                             onClick={() =>
                               handleSoftDelete(caseItem.id, caseItem.name)
                             }
-                            disabled={softDeleteMutation.isPending}
-                            className="inline-flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs text-orange-700 hover:bg-orange-100 transition-colors disabled:opacity-50"
-                            title="أرشفة"
                           >
                             {softDeleteMutation.isPending ? (
-                              <Loader2 size={14} className="animate-spin" />
+                              <Loader2 size={16} className="animate-spin" />
                             ) : (
-                              <Archive size={14} />
+                              <Archive size={16} />
                             )}
-                            أرشفة
-                          </button>
+                          </IconButton>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleHardDelete(caseItem.id, caseItem.name)
-                          }
-                          disabled={hardDeleteMutation.isPending}
-                          className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50"
-                          title="حذف نهائي"
-                        >
-                          {hardDeleteMutation.isPending ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={14} />
-                          )}
-                          حذف
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -609,26 +733,49 @@ export default function CasesPage() {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
-        <div>
-          صفحة <span className="font-semibold text-gray-900">{pageNumber}</span>{" "}
-          من <span className="font-semibold text-gray-900">{totalPages}</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur px-4 py-3 text-sm text-gray-600 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
+        <div className="flex items-center gap-2">
+          <span>
+            صفحة <span className="font-semibold text-gray-900">{pageNumber}</span>{" "}
+            من <span className="font-semibold text-gray-900">{totalPages}</span>
+          </span>
+          <span className="text-gray-400">•</span>
+          <span>
+            عرض{" "}
+            <span className="font-semibold text-gray-900">{cases.length}</span>{" "}
+            من <span className="font-semibold text-gray-900">{totalCount}</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => handlePageChange(pageNumber - 1)}
             disabled={pageNumber <= 1}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
           >
+            <ChevronRight size={16} />
             السابق
           </button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">اذهب إلى</span>
+            <input
+              type="number"
+              min={1}
+              max={totalPages}
+              value={pageNumber}
+              onChange={(e) => handlePageChange(Number(e.target.value))}
+              className="w-20 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+            />
+          </div>
+
           <button
             onClick={() => handlePageChange(pageNumber + 1)}
             disabled={pageNumber >= totalPages}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
           >
             التالي
+            <ChevronLeft size={16} />
           </button>
         </div>
       </div>

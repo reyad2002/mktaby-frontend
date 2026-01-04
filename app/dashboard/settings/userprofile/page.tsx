@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -25,11 +25,14 @@ import {
   setProfileImage,
 } from "@/features/users/apis/usersApi";
 import { getPermissionById } from "@/features/permissions/apis/permissionsApi";
+import { setPermissions } from "@/features/permissions/permissionsSlice";
 import EditProfileForm from "@/features/userprofile/components/EditProfileForm";
 
+import { useDispatch } from "react-redux";
 type TabKey = "basic" | "meta";
 
 export default function UserProfilePage() {
+  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [tab, setTab] = useState<TabKey>("basic");
 
@@ -44,9 +47,18 @@ export default function UserProfilePage() {
   const user = data?.data;
 
   // Note: Permission details API returns 403 Forbidden
-  // User already has permission name in user.userPermissionName
-  // If detailed permission data is needed, backend needs to provide it with user data
-  // or grant access to the Permission endpoint
+  const { data: permissionData } = useQuery({
+    queryKey: ["permission", user?.userPermissionId],
+    queryFn: () => getPermissionById(user!.userPermissionId),
+    enabled: !!user?.userPermissionId,
+  });
+
+  // Update permissions in Redux when permission data changes
+  useEffect(() => {
+    if (permissionData) {
+      dispatch(setPermissions(permissionData));
+    }
+  }, [permissionData, dispatch]);
 
   const createdAtText = useMemo(() => {
     if (!user?.createdAt) return "—";

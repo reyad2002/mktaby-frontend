@@ -1,15 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Scale } from "lucide-react";
+import { useSelector } from "react-redux";
+import { selectUserPermissions } from "@/features/permissions/permissionsSlice";
+import { selectUserProfile } from "@/features/userprofile/userProfileSlice";
+import { PermissionDetail } from "@/features/permissions/types/permissionTypes";
+
+// Permission keys that map to PermissionDetail fields
+type PermissionKey =
+  | "viewCasePermissions"
+  | "clientPermissions"
+  | "documentPermissions"
+  | "sessionPermission"
+  | "viewTaskPermissions"
+  | "financePermission";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
   submenu?: NavItem[];
+  permissionKey?: PermissionKey; // Permission required to view this item
+  adminOnly?: boolean; // Only visible to admin users (OfficeAdmin)
 }
 
 interface SideNavProps {
@@ -17,11 +32,24 @@ interface SideNavProps {
   onClose?: () => void;
 }
 
+// Helper function to check if user has permission
+const hasPermission = (
+  permissions: PermissionDetail,
+  key: PermissionKey
+): boolean => {
+  return permissions[key] > 0;
+};
+
 const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-
-  const navItems: NavItem[] = [
+  const userPermissions = useSelector(selectUserPermissions);
+  const userProfile = useSelector(selectUserProfile);
+  console.log("User Role in SideNav:", userProfile.role);
+  // OfficeAdmin has full access, NormalUser uses permissions
+  const isOfficeAdmin = userProfile.role === "OfficeAdmin";
+  
+  const allNavItems: NavItem[] = [
     {
       label: "لوحة التحكم",
       href: "/dashboard",
@@ -59,6 +87,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           />
         </svg>
       ),
+      permissionKey: "viewCasePermissions",
     },
     {
       label: "العملاء",
@@ -78,6 +107,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           />
         </svg>
       ),
+      permissionKey: "clientPermissions",
     },
     {
       label: "المحاكم",
@@ -97,6 +127,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           />
         </svg>
       ),
+      permissionKey: "documentPermissions",
     },
     {
       label: "الجلسات",
@@ -116,6 +147,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           />
         </svg>
       ),
+      permissionKey: "sessionPermission",
     },
     {
       label: "المهام",
@@ -135,6 +167,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           />
         </svg>
       ),
+      permissionKey: "viewTaskPermissions",
     },
     {
       label: "التقويم",
@@ -179,6 +212,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           />
         </svg>
       ),
+      adminOnly: true, // Only OfficeAdmin can access settings
       submenu: [
         {
           label: "المكتب",
@@ -203,6 +237,32 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       ],
     },
   ];
+
+  // Filter nav items based on user role and permissions
+  // OfficeAdmin: sees everything
+  // NormalUser: sees items based on their permissions
+  const navItems = useMemo(() => {
+    // OfficeAdmin has full access
+    if (isOfficeAdmin) {
+      return allNavItems;
+    }
+
+    // NormalUser: filter based on permissions
+    return allNavItems.filter((item) => {
+      // Check if item is admin only (settings)
+      if (item.adminOnly) {
+        return false;
+      }
+      // Check if item requires specific permission
+      if (
+        item.permissionKey &&
+        !hasPermission(userPermissions, item.permissionKey)
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [userPermissions, isOfficeAdmin]);
 
   const toggleSubmenu = (label: string) => {
     setExpandedItems((prev) =>

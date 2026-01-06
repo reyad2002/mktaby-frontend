@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import LoginForm from "@/features/auth/components/LoginForm";
 import { Scale } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "تسجيل الدخول",
+  description: "تسجيل الدخول إلى نظام مكتبي لإدارة المكاتب القانونية",
+};
 
 export default function LoginPage() {
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -14,26 +14,32 @@ import {
   User,
   Phone,
   Building2,
+  AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { register } from "../apis/authApi";
+import { getErrorMessage, getValidationErrors } from "@/lib/errorTypes";
 import {
   registerSchema,
   type RegisterFormData,
 } from "../validations/registerValidation";
+import PasswordStrength from "@/shared/components/ui/PasswordStrength";
 
-export default function RegisterForm() {
+function RegisterForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     register: formRegister,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const passwordValue = watch("password", "");
 
   const mutation = useMutation({
     mutationFn: (data: RegisterFormData) =>
@@ -53,29 +59,26 @@ export default function RegisterForm() {
       }
     },
     onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Registration mutation error:", err?.response?.data);
-
       // Handle validation errors from API
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
+      const validationErrors = getValidationErrors(error);
+      if (validationErrors.length > 0) {
+        validationErrors.forEach((msg) => toast.error(msg));
       } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إنشاء الحساب"
-        );
+        toast.error(getErrorMessage(error, "حدث خطأ أثناء إنشاء الحساب"));
       }
     },
   });
 
-  const onSubmit = (data: RegisterFormData) => {
-    console.log("Form Data:", data);
-    mutation.mutate(data);
-  };
+  const onSubmit = useCallback(
+    (data: RegisterFormData) => {
+      mutation.mutate(data);
+    },
+    [mutation]
+  );
+
+  const togglePassword = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -208,16 +211,21 @@ export default function RegisterForm() {
             <Lock className="absolute left-3 top-2.5 text-gray-400" size={20} />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={togglePassword}
               className="absolute right-3 top-2.5 text-gray-400 focus:outline-none"
+              aria-label={
+                showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
+              }
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          <PasswordStrength password={passwordValue} showRequirements={true} />
           {errors.password && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.password.message}
-            </p>
+            <div className="flex items-center gap-1 text-red-500 text-sm mt-1">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.password.message}</span>
+            </div>
           )}
         </div>
 
@@ -261,3 +269,5 @@ export default function RegisterForm() {
     </form>
   );
 }
+
+export default memo(RegisterForm);

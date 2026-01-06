@@ -1,7 +1,11 @@
-"use client";
-
+import type { Metadata } from "next";
 import RegisterForm from "@/features/auth/components/RegisterForm";
 import { Scale } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "إنشاء حساب جديد",
+  description: "إنشاء حساب جديد في نظام مكتبي لإدارة المكاتب القانونية",
+};
 
 export default function RegisterPage() {
   return (

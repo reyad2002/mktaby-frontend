@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -37,6 +37,8 @@ import {
 import AddCourtForm from "@/features/courts/components/AddCourtForm";
 import EditCourtForm from "@/features/courts/components/EditCourtForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import ConfirmDialog from "@/shared/components/ui/ConfirmDialog";
+import Tooltip from "@/shared/components/ui/Tooltip";
 import type {
   Params,
   CourtsResource,
@@ -232,6 +234,13 @@ export default function CourtsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editCourtId, setEditCourtId] = useState<number | null>(null);
 
+  // Delete confirmation state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    type: "soft" | "hard" | "restore";
+    court: { id: number; name: string } | null;
+  }>({ open: false, type: "soft", court: null });
+
   useLockBodyScroll(showAddCourtModal || showEditModal);
 
   const queryClient = useQueryClient();
@@ -282,29 +291,41 @@ export default function CourtsPage() {
     },
   });
 
-  const handleSoftDelete = (id: number, name: string) => {
-    if (
-      window.confirm(`هل تريد أرشفة المحكمة "${name}"؟\nيمكن استعادتها لاحقاً.`)
-    ) {
+  const handleSoftDelete = useCallback((id: number, name: string) => {
+    setDeleteDialog({ open: true, type: "soft", court: { id, name } });
+  }, []);
+
+  const handleHardDelete = useCallback((id: number, name: string) => {
+    setDeleteDialog({ open: true, type: "hard", court: { id, name } });
+  }, []);
+
+  const handleRestore = useCallback((id: number, name: string) => {
+    setDeleteDialog({ open: true, type: "restore", court: { id, name } });
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    setDeleteDialog({ open: false, type: "soft", court: null });
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteDialog.court) return;
+    const { id } = deleteDialog.court;
+
+    if (deleteDialog.type === "soft") {
       softDeleteMutation.mutate(id);
-    }
-  };
-
-  const handleHardDelete = (id: number, name: string) => {
-    if (
-      window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف المحكمة "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`
-      )
-    ) {
+    } else if (deleteDialog.type === "hard") {
       hardDeleteMutation.mutate(id);
-    }
-  };
-
-  const handleRestore = (id: number, name: string) => {
-    if (window.confirm(`هل تريد استعادة المحكمة "${name}"؟`)) {
+    } else {
       restoreMutation.mutate(id);
     }
-  };
+    closeDeleteDialog();
+  }, [
+    deleteDialog,
+    softDeleteMutation,
+    hardDeleteMutation,
+    restoreMutation,
+    closeDeleteDialog,
+  ]);
 
   const queryParams = useMemo(() => {
     return {
@@ -769,6 +790,46 @@ export default function CourtsPage() {
           />
         </ModalShell>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        title={
+          deleteDialog.type === "soft"
+            ? "تأكيد الأرشفة"
+            : deleteDialog.type === "hard"
+            ? "تأكيد الحذف النهائي"
+            : "تأكيد الاستعادة"
+        }
+        description={
+          deleteDialog.type === "soft"
+            ? `هل تريد أرشفة المحكمة "${deleteDialog.court?.name}"؟ يمكن استعادتها لاحقاً.`
+            : deleteDialog.type === "hard"
+            ? `⚠️ تحذير: هل أنت متأكد من حذف المحكمة "${deleteDialog.court?.name}" نهائياً؟ لا يمكن التراجع عن هذا الإجراء!`
+            : `هل تريد استعادة المحكمة "${deleteDialog.court?.name}"؟`
+        }
+        confirmText={
+          deleteDialog.type === "soft"
+            ? "أرشفة"
+            : deleteDialog.type === "hard"
+            ? "حذف نهائي"
+            : "استعادة"
+        }
+        variant={
+          deleteDialog.type === "hard"
+            ? "danger"
+            : deleteDialog.type === "soft"
+            ? "warning"
+            : "info"
+        }
+        isLoading={
+          softDeleteMutation.isPending ||
+          hardDeleteMutation.isPending ||
+          restoreMutation.isPending
+        }
+      />
     </section>
   );
 }

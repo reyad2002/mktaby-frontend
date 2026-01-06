@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Scale } from "lucide-react";
@@ -45,10 +45,9 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const userPermissions = useSelector(selectUserPermissions);
   const userProfile = useSelector(selectUserProfile);
-  console.log("User Role in SideNav:", userProfile.role);
   // OfficeAdmin has full access, NormalUser uses permissions
   const isOfficeAdmin = userProfile.role === "OfficeAdmin";
-  
+
   const allNavItems: NavItem[] = [
     {
       label: "لوحة التحكم",
@@ -264,18 +263,21 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
     });
   }, [userPermissions, isOfficeAdmin]);
 
-  const toggleSubmenu = (label: string) => {
+  const toggleSubmenu = useCallback((label: string) => {
     setExpandedItems((prev) =>
       prev.includes(label)
         ? prev.filter((item) => item !== label)
         : [...prev, label]
     );
-  };
+  }, []);
 
-  const isActiveRoute = (href: string) => {
-    if (href === "#") return false;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
+  const isActiveRoute = useCallback(
+    (href: string) => {
+      if (href === "#") return false;
+      return pathname === href || pathname.startsWith(href + "/");
+    },
+    [pathname]
+  );
 
   return (
     <>
@@ -417,4 +419,4 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
   );
 };
 
-export default SideNav;
+export default memo(SideNav);

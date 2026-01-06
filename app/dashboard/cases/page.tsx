@@ -328,7 +328,7 @@ export default function CasesPage() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-white" />
+        <div className="absolute inset-0 bg-linear-to-b from-slate-50 via-white to-white" />
       </div>
 
       <PageHeader
@@ -345,10 +345,10 @@ export default function CasesPage() {
       <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
         <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
           {/* Accent line */}
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-500" />
 
           <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
               <SlidersHorizontal size={16} className="text-blue-700" />
             </span>
             فلاتر البحث
@@ -551,7 +551,7 @@ export default function CasesPage() {
       <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-b from-gray-50 to-white sticky top-0 z-10">
+            <thead className="bg-linear-to-b from-gray-50 to-white sticky top-0 z-10">
               <tr className="text-right text-xs font-semibold text-gray-700">
                 <th className="px-4 py-3 whitespace-nowrap">رقم القضية</th>
                 <th className="px-4 py-3">الاسم</th>
@@ -597,7 +597,7 @@ export default function CasesPage() {
                     key={caseItem.id}
                     className={`text-sm text-gray-700 transition-colors ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-                    } hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-transparent`}
+                    } hover:bg-linear-to-r hover:from-blue-50/60 hover:to-transparent`}
                   >
                     <td className="px-4 py-4 font-semibold text-blue-700 whitespace-nowrap">
                       {caseItem.caseNumber}
@@ -611,7 +611,7 @@ export default function CasesPage() {
                           </span>
 
                           {caseItem.isPrivate && (
-                            <span className="inline-flex items-center gap-1 rounded-xl border border-amber-200/70 bg-gradient-to-br from-amber-50 to-orange-50 px-2 py-0.5 text-xs text-amber-800">
+                            <span className="inline-flex items-center gap-1 rounded-xl border border-amber-200/70 bg-linear-to-br from-amber-50 to-orange-50 px-2 py-0.5 text-xs text-amber-800">
                               <Lock size={12} />
                               خاصة
                             </span>
@@ -624,7 +624,7 @@ export default function CasesPage() {
                     </td>
 
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-800 border border-blue-200/60">
+                      <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-xl bg-linear-to-br from-blue-50 to-indigo-50 text-blue-800 border border-blue-200/60">
                         {caseItem.caseType.label}
                       </span>
                     </td>

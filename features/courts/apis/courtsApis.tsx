@@ -1,27 +1,17 @@
-import {
-  ApiResponse,
-  PaginatedResponse,
-  SelectOption,
-  CourtsResource,
+import type {
   GetCourtsResponse,
-  CourtType,
   CreateCourtRequest,
   CreateCourtResponse,
   UpdateCourtRequest,
   UpdateCourtResponse,
-  CourtDropdownItem,
   CourtDropdownQuery,
   GetCourtDropdownResponse,
-  Court,
   GetCourtByIdResponse,
   SoftDeleteCourtResponse,
   HardDeleteCourtResponse,
   RestoreCourtResponse,
-  SelectOptionCourtsType,
-  CourtTypeValue,
-  CourtTypeOption,
   GetCourtTypesResponse,
-  Params
+  Params,
 } from "../types/courtsTypes";
 import {
   COURTS_LIST_PATH,
@@ -38,7 +28,9 @@ import apiClient from "@/lib/apiClient";
 // ===========================
 // Court Resources (GET /Court/resources)
 // ===========================
-export async function getCourtsResourcesApi(params:Params ): Promise<GetCourtsResponse> {
+export async function getCourtsResourcesApi(
+  params: Params
+): Promise<GetCourtsResponse> {
   const response = await apiClient.get<GetCourtsResponse>(COURTS_LIST_PATH, {
     params,
   });
@@ -50,7 +42,7 @@ export async function getCourtsResourcesApi(params:Params ): Promise<GetCourtsRe
 export async function createCourtApi(
   courtData: CreateCourtRequest
 ): Promise<CreateCourtResponse> {
-    const response = await apiClient.post<CreateCourtResponse>(
+  const response = await apiClient.post<CreateCourtResponse>(
     ADD_COURT_PATH,
     courtData
   );
@@ -73,7 +65,9 @@ export async function updateCourtApi(
 // ===========================
 // Get Court by ID (GET /Court/{id})
 // ===========================
-export async function getCourtByIdApi(id: number): Promise<GetCourtByIdResponse> {
+export async function getCourtByIdApi(
+  id: number
+): Promise<GetCourtByIdResponse> {
   const response = await apiClient.get<GetCourtByIdResponse>(
     GET_COURT_BY_ID_PATH(id)
   );
@@ -82,7 +76,9 @@ export async function getCourtByIdApi(id: number): Promise<GetCourtByIdResponse>
 // ===========================
 // Soft Delete Court (DELETE /Court/soft/{id})
 // ===========================
-export async function softDeleteCourtApi(id: number): Promise<SoftDeleteCourtResponse> {
+export async function softDeleteCourtApi(
+  id: number
+): Promise<SoftDeleteCourtResponse> {
   const response = await apiClient.delete<SoftDeleteCourtResponse>(
     SOFT_DELETE_COURT_PATH(id)
   );
@@ -91,7 +87,9 @@ export async function softDeleteCourtApi(id: number): Promise<SoftDeleteCourtRes
 // ===========================
 // Hard Delete Court (DELETE /Court/hard/{id})
 // ===========================
-export async function hardDeleteCourtApi(id: number): Promise<HardDeleteCourtResponse> {
+export async function hardDeleteCourtApi(
+  id: number
+): Promise<HardDeleteCourtResponse> {
   const response = await apiClient.delete<HardDeleteCourtResponse>(
     HARD_DELETE_COURT_PATH(id)
   );
@@ -100,7 +98,9 @@ export async function hardDeleteCourtApi(id: number): Promise<HardDeleteCourtRes
 // ===========================
 // Restore Court (POST /Court/restore/{id})
 // ===========================
-export async function restoreCourtApi(id: number): Promise<RestoreCourtResponse> {
+export async function restoreCourtApi(
+  id: number
+): Promise<RestoreCourtResponse> {
   const response = await apiClient.post<RestoreCourtResponse>(
     RESTORE_COURT_PATH(id)
   );
@@ -112,7 +112,7 @@ export async function restoreCourtApi(id: number): Promise<RestoreCourtResponse>
 export async function getCourtDropdownApi(
   params: CourtDropdownQuery = {}
 ): Promise<GetCourtDropdownResponse> {
-    const response = await apiClient.get<GetCourtDropdownResponse>(
+  const response = await apiClient.get<GetCourtDropdownResponse>(
     COURTS_DROPDOWN_PATH,
     {
       params,
@@ -124,8 +124,6 @@ export async function getCourtDropdownApi(
 // Court Types (GET /Court/courtTypes)
 // ===========================
 export async function getCourtTypesApi(): Promise<GetCourtTypesResponse> {
-  const response = await apiClient.get<GetCourtTypesResponse>(
-    COURT_TYPES_PATH
-  );
+  const response = await apiClient.get<GetCourtTypesResponse>(COURT_TYPES_PATH);
   return response.data;
 }

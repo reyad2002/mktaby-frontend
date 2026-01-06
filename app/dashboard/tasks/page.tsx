@@ -112,7 +112,7 @@ function ModalShell({
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
             {Icon ? (
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                 <Icon size={18} className={iconClassName} />
               </span>
             ) : null}
@@ -391,7 +391,7 @@ export default function TasksPage() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-white" />
+        <div className="absolute inset-0 bg-linear-to-b from-slate-50 via-white to-white" />
       </div>
 
       {/* Header */}
@@ -482,7 +482,7 @@ export default function TasksPage() {
                   <div
                     className={[
                       "w-11 h-11 rounded-2xl border border-gray-200/70 shadow-sm",
-                      "bg-gradient-to-br",
+                      "bg-linear-to-br",
                       t.iconBg,
                       "flex items-center justify-center",
                     ].join(" ")}
@@ -739,7 +739,7 @@ export default function TasksPage() {
         <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-b from-gray-50 to-white sticky top-0 z-10">
+              <thead className="bg-linear-to-b from-gray-50 to-white sticky top-0 z-10">
                 <tr className="text-right text-xs font-semibold text-gray-700">
                   <th className="px-4 py-3">العنوان</th>
                   <th className="px-4 py-3 whitespace-nowrap">الأولوية</th>
@@ -756,12 +756,12 @@ export default function TasksPage() {
                     key={task.id}
                     className={`text-sm text-gray-800 transition-colors ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-                    } hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-transparent`}
+                    } hover:bg-linear-to-r hover:from-blue-50/60 hover:to-transparent`}
                   >
                     {/* Title */}
                     <td className="px-4 py-4 min-w-[280px]">
                       <div className="flex items-start gap-3">
-                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                           <CheckSquare size={16} className="text-blue-700" />
                         </span>
 
@@ -975,7 +975,7 @@ export default function TasksPage() {
         >
           <div className="space-y-6">
             {/* Title */}
-            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-4">
+            <div className="rounded-xl border border-gray-200 bg-linear-to-br from-blue-50 to-white p-4">
               <div className="flex items-start gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-100 border border-blue-200">
                   <CheckSquare size={18} className="text-blue-700" />
@@ -1083,7 +1083,7 @@ export default function TasksPage() {
 
             {/* Assigned To */}
             {/* {selectedTask.assignedTo && (
-              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-indigo-50 to-white p-4">
+              <div className="rounded-xl border border-gray-200 bg-linear-to-br from-indigo-50 to-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200">
                     <User size={18} className="text-indigo-700" />

@@ -1,36 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import Link from "next/link";
 import { logout } from "../../../features/auth/apis/authApi";
-import Cookies from "js-cookie";
+import { clearTokens } from "@/lib/authTokens";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser } from "@/features/users/apis/usersApi";
+import NotificationDropdown from "@/features/notification/components/NotificationDropdown";
+import toast from "react-hot-toast";
+
 interface HeaderProps {
   toggleSidebar?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const router = useRouter();
-  const logoutMethod = async () => {
-    const token = Cookies.get("accessToken");
-    if (!token) {
-      console.error("No auth token found.");
-      return;
-    }
-    try {
-      await logout("1", true, token);
-      // Redirect to login page or show a message
-      Cookies.remove("accessToken");
-      Cookies.remove("refreshToken");
-      router.replace("/auth/login");
-      // router.push("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+  const queryClient = useQueryClient();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const logoutMethod = useCallback(async () => {
+    try {
+      await logout("browser-device", true);
+    } catch {
+      // Continue with logout even if API fails
+    } finally {
+      clearTokens();
+      queryClient.clear();
+      toast.success("تم تسجيل الخروج بنجاح");
+      router.replace("/auth/login");
+    }
+  }, [router, queryClient]);
+
+  const toggleProfile = useCallback(() => {
+    setIsProfileOpen((prev) => !prev);
+  }, []);
+
+  const closeProfile = useCallback(() => {
+    setIsProfileOpen(false);
+  }, []);
+
   // Fetch current user details
   const { data: userResponse } = useQuery({
     queryKey: ["currentUser"],
@@ -38,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   });
   //  console.log("Header User Response:", userResponse);
   return (
-    <header className="bg-linear-to-r from-slate-950 via-slate-900 to-slate-800 border-b border-yellow-400/40 shadow-xl shadow-yellow-900/20 w-full">
+    <header className="bg-linear-to-r from-slate-950 via-slate-900 to-slate-800 border-b border-yellow-400/40 shadow-xl shadow-yellow-900/20 w-full sticky top-0 z-30">
       <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
         {/* Logo and Brand */}
         <div className="flex items-center gap-3 sm:gap-4 text-yellow-100">
@@ -100,27 +109,15 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
         {/* Left Actions (Right in RTL) */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Notifications */}
-          <button className="relative p-2 text-yellow-200 hover:bg-white/10 rounded-lg transition-colors border border-white/10">
-            <svg
-              className="w-5 h-5 sm:w-6 sm:h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-            <span className="absolute top-1 left-1 w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full shadow-[0_0_0_3px_rgba(255,214,102,0.25)]"></span>
-          </button>
+          <NotificationDropdown />
 
           {/* Profile Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              onClick={toggleProfile}
+              aria-expanded={isProfileOpen}
+              aria-haspopup="true"
+              aria-label="قائمة الملف الشخصي"
               className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg border border-white/10 hover:border-yellow-300/60 hover:bg-white/5 transition-colors"
             >
               <div className="hidden sm:block text-sm text-right text-gray-100">
@@ -140,7 +137,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 <Link
                   href="/dashboard/settings/userprofile"
                   className="block px-4 py-3 text-sm text-gray-100 hover:bg-white/10 text-right"
-                  onClick={() => setIsProfileOpen(false)}
+                  onClick={closeProfile}
                 >
                   إعدادات الملف الشخصي
                 </Link>
@@ -162,4 +159,4 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   );
 };
 
-export default Header;
+export default memo(Header);

@@ -15,8 +15,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "مكتبي - نظام إدارة المكتب القانوني",
-  description: "نظام شامل لإدارة المكاتب القانونية",
+  title: {
+    default: "مكتبي - نظام إدارة المكتب القانوني",
+    template: "%s | مكتبي",
+  },
+  description:
+    "نظام شامل لإدارة المكاتب القانونية - إدارة القضايا والعملاء والجلسات والمهام والمحاسبة",
+  keywords: [
+    "مكتب محاماة",
+    "إدارة قضايا",
+    "نظام قانوني",
+    "إدارة عملاء",
+    "جلسات محكمة",
+    "مكتبي",
+  ],
+  authors: [{ name: "مكتبي" }],
+  creator: "مكتبي",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    locale: "ar_EG",
+    siteName: "مكتبي",
+    title: "مكتبي - نظام إدارة المكتب القانوني",
+    description:
+      "نظام شامل لإدارة المكاتب القانونية - إدارة القضايا والعملاء والجلسات والمهام والمحاسبة",
+  },
 };
 
 export default function RootLayout({

@@ -134,8 +134,8 @@ export default function UsersPage() {
   const [viewingUserId, setViewingUserId] = useState<number | null>(null);
 
   // Permissions (kept as-is)
-  const permissions = useSelector(selectUserPermissions);
-  console.log("User Permissions from Redux:", permissions);
+  // const permissions = useSelector(selectUserPermissions);
+  // console.log("User Permissions from Redux:", permissions);
 
   useLockBodyScroll(showAddUserModal || !!editingUserId || !!viewingUserId);
 

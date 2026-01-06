@@ -39,7 +39,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     queryFn: () => getPermissionById(userData!.data!.userPermissionId),
     enabled: !!userData?.data?.userPermissionId,
   });
-
+  console.log("Fetched Permissions Data:", permissionData);
   // Store user profile in Redux
   useEffect(() => {
     if (userData?.data) {

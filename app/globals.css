@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
-@theme  {
-  /* --color-background: var(--background); */
-
+* {
+  scroll-behavior: smooth;
+  scrollbar-color: #17536e #f0f0f0;
 }
-

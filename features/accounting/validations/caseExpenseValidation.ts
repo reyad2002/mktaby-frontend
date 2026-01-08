@@ -2,25 +2,25 @@ import { z } from "zod";
 
 export const addCaseExpenseSchema = z.object({
   caseId: z
-    .number({ required_error: "يرجى اختيار القضية" })
+    .number()
     .min(1, "يرجى اختيار القضية"),
   amount: z
-    .number({ required_error: "يرجى إدخال المبلغ" })
+    .number()
     .min(0.01, "المبلغ يجب أن يكون أكبر من صفر"),
   expenseDate: z
-    .string({ required_error: "يرجى إدخال تاريخ المصروف" })
+    .string()
     .min(1, "يرجى إدخال تاريخ المصروف"),
 });
 
 export const updateCaseExpenseSchema = z.object({
   caseId: z
-    .number({ required_error: "يرجى اختيار القضية" })
+    .number()
     .min(1, "يرجى اختيار القضية"),
   amount: z
-    .number({ required_error: "يرجى إدخال المبلغ" })
+    .number()
     .min(0.01, "المبلغ يجب أن يكون أكبر من صفر"),
   expenseDate: z
-    .string({ required_error: "يرجى إدخال تاريخ المصروف" })
+    .string()
     .min(1, "يرجى إدخال تاريخ المصروف"),
 });
 

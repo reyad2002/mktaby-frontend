@@ -27,7 +27,7 @@ export type GetCaseFeesQuery = {
 
 // ✅ Item DTO (Fee واحد)
 export type CaseFeeDto = {
-  description: ReactNode;
+  description: string;
   id: number;
   amount: number;
   caseId: number;

@@ -68,14 +68,12 @@ export type CaseFeeDetailsDto = {
 // ✅ Response  GET /api/CaseFees/{id}
 export type GetCaseFeeByIdResponse = ApiResponse<CaseFeeDetailsDto>;
 
-
 // ✅ Request Body  PUT /api/CaseFees/{id}
 export type UpdateCaseFeeRequest = {
   amount: number;
   toBePaidAt: string; // ISO date-time
 };
 export type UpdateCaseFeeResponse = ApiResponse<boolean>;
-
 
 // Delete Case Fee (Soft Delete) Response
 export type DeleteCaseFeeResponse = ApiResponse<boolean>;

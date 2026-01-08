@@ -5,8 +5,8 @@ import apiClient from "@/lib/apiClient";
 // ✅ GET /api/CaseFees
 export async function getCaseFees(
   params: TYPES.GetCaseFeesQuery = {}
-): Promise<TYPES.GetCaseFeesResponse> { 
-    const response = await apiClient.get<TYPES.GetCaseFeesResponse>(
+): Promise<TYPES.GetCaseFeesResponse> {
+  const response = await apiClient.get<TYPES.GetCaseFeesResponse>(
     PATHES.CASE_FEES_PATH,
     {
       params,
@@ -15,12 +15,13 @@ export async function getCaseFees(
   return response.data;
 }
 
-// ✅ POST /api/CaseFees
+// ✅ POST /api/CaseFees/{caseId}
 export async function createCaseFee(
+  caseId: number,
   payload: TYPES.CreateCaseFeeRequest
 ): Promise<TYPES.CreateCaseFeeResponse> {
   const response = await apiClient.post<TYPES.CreateCaseFeeResponse>(
-    PATHES.CASE_FEES_PATH,
+    PATHES.CREATE_CASE_FEE_PATH(caseId),
     payload
   );
   return response.data;
@@ -35,7 +36,7 @@ export async function getCaseFeeById(
   return response.data;
 }
 
- // ✅ PUT /api/CaseFees/{id}
+// ✅ PUT /api/CaseFees/{id}
 export async function updateCaseFee(
   id: number,
   payload: Partial<TYPES.UpdateCaseFeeRequest>

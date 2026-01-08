@@ -27,6 +27,7 @@ export type GetCaseFeesQuery = {
 
 // ✅ Item DTO (Fee واحد)
 export type CaseFeeDto = {
+  description: ReactNode;
   id: number;
   amount: number;
   caseId: number;
@@ -48,7 +49,7 @@ export type GetCaseFeesResponse = ApiResponse<PaginatedCaseFees>;
 
 // ✅ Request Body  POST /api/CaseFees
 export type CreateCaseFeeRequest = {
-  caseId: number; // int64
+  // caseId: number; // int64
   amount: number; // number
   toBePaidAt: string; // date-time (ISO)
 };

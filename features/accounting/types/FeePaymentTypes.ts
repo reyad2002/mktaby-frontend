@@ -5,30 +5,27 @@ export type PaymentMethod =
   | "MobilePayment"
   | "Check";
 
-export type FeePaymentStatus =
-  | "Unpaid"
-  | "Paid"
-  | "Overdue";
+export type FeePaymentStatus = "Unpaid" | "Paid" | "Overdue";
 
+export type GetFeePaymentsQuery = {
+  CaseId?: number; // int64 (query) - Filter by case
+  CaseFeeId?: number; // int64 (query)
 
-  export type GetFeePaymentsQuery = {
-  CaseFeeId?: number;          // int64 (query)
+  AmountStart?: number; // double
+  AmountEnd?: number; // double
 
-  AmountStart?: number;        // double
-  AmountEnd?: number;          // double
-
-  PaymentDateStart?: string;   // date-time (ISO)
-  PaymentDateEnd?: string;     // date-time (ISO)
+  PaymentDateStart?: string; // date-time (ISO)
+  PaymentDateEnd?: string; // date-time (ISO)
 
   PaymentMethod?: PaymentMethod;
 
-  DueDateStart?: string;       // date-time (ISO)
-  DueDateEnd?: string;         // date-time (ISO)
+  DueDateStart?: string; // date-time (ISO)
+  DueDateEnd?: string; // date-time (ISO)
 
   Status?: FeePaymentStatus;
 
-  PageNumber?: number;         // int32
-  PageSize?: number;           // int32
+  PageNumber?: number; // int32
+  PageSize?: number; // int32
 
   Search?: string;
   Sort?: string;
@@ -36,20 +33,19 @@ export type FeePaymentStatus =
   IsDeleted?: boolean;
 };
 
- export type FeePaymentDto = {
+export type FeePaymentDto = {
   id: number;
   caseFeeId: number;
   amount: number;
 
-  paymentDate: string;   // ISO date-time
+  paymentDate: string; // ISO date-time
   paymentMethod: PaymentMethod;
 
-  dueDate: string;       // ISO date-time
+  dueDate: string; // ISO date-time
   status: FeePaymentStatus;
 
-  createdAt: string;     // ISO date-time
+  createdAt: string; // ISO date-time
 };
-
 
 export type PaginatedFeePayments = {
   pageNumber: number;
@@ -64,50 +60,45 @@ export type ApiResponse<T> = {
   data: T;
 };
 
-export type GetFeePaymentsResponse =
-  ApiResponse<PaginatedFeePayments>;
+export type GetFeePaymentsResponse = ApiResponse<PaginatedFeePayments>;
 
 //   /////////////////////////////
 
 export type CreateFeePaymentRequest = {
   title: string;
-  caseFeeId: number;        // int64
-  amount: number;           // double/number
-  paymentDate: string;      // date-time (ISO)
+  caseFeeId: number; // int64
+  amount: number; // double/number
+  paymentDate: string; // date-time (ISO)
   paymentMethod: PaymentMethod;
-  dueDate: string;          // date-time (ISO)
+  dueDate: string; // date-time (ISO)
   status: FeePaymentStatus;
 };
 
-
 export type CreateFeePaymentResponse = ApiResponse<number>;
-
 
 export type FeePaymentDetailsDto = {
   id: number;
   caseFeeId: number;
   amount: number;
 
-  paymentDate: string;    // ISO date-time
+  paymentDate: string; // ISO date-time
   paymentMethod: PaymentMethod;
 
-  dueDate: string;        // ISO date-time
+  dueDate: string; // ISO date-time
   status: FeePaymentStatus;
 
-  createdAt: string;      // ISO date-time
+  createdAt: string; // ISO date-time
 };
 
-export type GetFeePaymentByIdResponse =
-  ApiResponse<FeePaymentDetailsDto>;
+export type GetFeePaymentByIdResponse = ApiResponse<FeePaymentDetailsDto>;
 
-
-  export type UpdateFeePaymentRequest = {
+export type UpdateFeePaymentRequest = {
   title: string;
-  caseFeeId: number;       // int64
-  amount: number;          // number
-  paymentDate: string;     // ISO date-time
+  caseFeeId: number; // int64
+  amount: number; // number
+  paymentDate: string; // ISO date-time
   paymentMethod: PaymentMethod;
-  dueDate: string;         // ISO date-time
+  dueDate: string; // ISO date-time
   status: FeePaymentStatus;
 };
 export type UpdateFeePaymentResponse = ApiResponse<boolean>;

@@ -323,7 +323,7 @@ export default function CasesPage() {
   };
 
   return (
-    <section className="space-y-6 relative">
+    <section className="space-y-6 relative ">
       {/* Soft premium background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />

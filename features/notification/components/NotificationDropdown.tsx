@@ -122,7 +122,7 @@ const NotificationDropdown: React.FC = () => {
       {/* Notification Bell Button */}
       <button
         onClick={toggleDropdown}
-        className="relative p-2 text-yellow-200 hover:bg-white/10 rounded-lg transition-colors border border-white/10"
+        className="relative p-2 hover:text-white hover:bg-[#17536e]/80 cursor-pointer  bg-[#17536e] text-white rounded-lg transition-colors border border-white/10"
         aria-label="الإشعارات"
         aria-expanded={isOpen}
         aria-haspopup="true"

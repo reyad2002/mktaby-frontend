@@ -13,12 +13,14 @@ export {
 
 //CaseFees Paths
 const CASE_FEES_PATH = "/CaseFees";
+const CREATE_CASE_FEE_PATH = (caseId: number) => `/CaseFees/${caseId}`;
 const GET_CASE_FEE_BY_ID_PATH = (id: number) => `/CaseFees/${id}`;
 const UPDATE_CASE_FEE_PATH = (id: number) => `/CaseFees/${id}`;
 const DELETE_CASE_FEE_PATH = (id: number) => `/CaseFees/soft/${id}`;
 
 export {
   CASE_FEES_PATH,
+  CREATE_CASE_FEE_PATH,
   GET_CASE_FEE_BY_ID_PATH,
   UPDATE_CASE_FEE_PATH,
   DELETE_CASE_FEE_PATH,

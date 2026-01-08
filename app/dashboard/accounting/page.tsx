@@ -21,7 +21,7 @@ export default function AccountingPage() {
       color: "from-amber-500 to-amber-600",
       bgColor: "bg-amber-500/10",
       borderColor: "border-amber-400/30",
-      path: "/dashboard/accounting/office-expenses",
+      path: "/dashboard/accounting/office-accounting",
     },
     {
       title: " القضايا",
@@ -30,7 +30,7 @@ export default function AccountingPage() {
       color: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-400/30",
-      path: "/dashboard/accounting/case-expenses",
+      path: "/dashboard/accounting/case-accounting",
     },
   ];
 

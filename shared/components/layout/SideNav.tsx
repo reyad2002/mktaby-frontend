@@ -3,7 +3,25 @@
 import React, { useState, useMemo, useCallback, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Scale } from "lucide-react";
+import {
+  Scale,
+  LayoutDashboard,
+  Users,
+  Building2,
+  Clock,
+  CheckSquare,
+  CalendarDays,
+  Wallet,
+  Bell,
+  Settings,
+  ChevronLeft,
+  ChevronDown,
+  UserCog,
+  Shield,
+  User,
+  Building,
+  Gavel,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUserPermissions } from "@/features/permissions/permissionsSlice";
 import { selectUserProfile } from "@/features/userprofile/userProfileSlice";
@@ -23,8 +41,9 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   submenu?: NavItem[];
-  permissionKey?: PermissionKey; // Permission required to view this item
-  adminOnly?: boolean; // Only visible to admin users (OfficeAdmin)
+  permissionKey?: PermissionKey;
+  adminOnly?: boolean;
+  badge?: string | number;
 }
 
 interface SideNavProps {
@@ -45,214 +64,100 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const userPermissions = useSelector(selectUserPermissions);
   const userProfile = useSelector(selectUserProfile);
-  // OfficeAdmin has full access, NormalUser uses permissions
   const isOfficeAdmin = userProfile.role === "OfficeAdmin";
 
   const allNavItems: NavItem[] = [
     {
-      label: "لوحة التحكم",
+      label: "الصفحة الرئيسية",
       href: "/dashboard",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 12l2-3m0 0l7-4 7 4M5 7v10a1 1 0 001 1h12a1 1 0 001-1V7m0 0l-7 4m7-4L9 7"
-          />
-        </svg>
-      ),
+      icon: <LayoutDashboard size={20} />,
     },
     {
-      label: "القضايا",
+      label: "إدارة القضايا",
       href: "/dashboard/cases",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
+      icon: <Gavel size={20} />,
       permissionKey: "viewCasePermissions",
     },
     {
-      label: "العملاء",
+      label: "إدارة الموكلين",
       href: "/dashboard/clients",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4.354a4 4 0 110 5.292M15 4H9m6 16H9m6-7a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ),
+      icon: <Users size={20} />,
       permissionKey: "clientPermissions",
     },
     {
       label: "المحاكم",
       href: "/dashboard/courts",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-          />
-        </svg>
-      ),
+      icon: <Building2 size={20} />,
       permissionKey: "documentPermissions",
     },
     {
-      label: "الجلسات",
+      label: "إدارة الجلسات",
       href: "/dashboard/sessions",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
+      icon: <Clock size={20} />,
       permissionKey: "sessionPermission",
     },
     {
       label: "المهام",
       href: "/dashboard/tasks",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-          />
-        </svg>
-      ),
+      icon: <CheckSquare size={20} />,
       permissionKey: "viewTaskPermissions",
     },
     {
       label: "التقويم",
       href: "/dashboard/calendar",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-          />
-        </svg>
-      ),
+      icon: <CalendarDays size={20} />,
+    },
+    {
+      label: "إدارة الماليات",
+      href: "/dashboard/accounting",
+      icon: <Wallet size={20} />,
+      permissionKey: "financePermission",
+    },
+    {
+      label: "إدارة الإشعارات",
+      href: "/dashboard/notifications",
+      icon: <Bell size={20} />,
     },
     {
       label: "الإعدادات",
       href: "#",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      ),
-      adminOnly: true, // Only OfficeAdmin can access settings
+      icon: <Settings size={20} />,
+      adminOnly: true,
       submenu: [
         {
           label: "المكتب",
           href: "/dashboard/settings/office",
-          icon: null,
+          icon: <Building size={18} />,
         },
         {
           label: "المستخدمون",
           href: "/dashboard/settings/users",
-          icon: null,
+          icon: <UserCog size={18} />,
         },
         {
           label: "الصلاحيات",
           href: "/dashboard/settings/permissions",
-          icon: null,
+          icon: <Shield size={18} />,
         },
         {
           label: "الملف الشخصي",
           href: "/dashboard/settings/userprofile",
-          icon: null,
+          icon: <User size={18} />,
         },
       ],
     },
   ];
 
   // Filter nav items based on user role and permissions
-  // OfficeAdmin: sees everything
-  // NormalUser: sees items based on their permissions
   const navItems = useMemo(() => {
-    // OfficeAdmin has full access
     if (isOfficeAdmin) {
       return allNavItems;
     }
 
-    // NormalUser: filter based on permissions
     return allNavItems.filter((item) => {
-      // Check if item is admin only (settings)
       if (item.adminOnly) {
         return false;
       }
-      // Check if item requires specific permission
       if (
         item.permissionKey &&
         !hasPermission(userPermissions, item.permissionKey)
@@ -261,6 +166,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       }
       return true;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPermissions, isOfficeAdmin]);
 
   const toggleSubmenu = useCallback((label: string) => {
@@ -284,137 +190,187 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 lg:hidden z-30 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 lg:hidden z-30 backdrop-blur-sm"
           onClick={onClose}
-        ></div>
+        />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static right-0 top-0 h-screen w-64 sm:w-72 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 border-l border-yellow-400/40 shadow-2xl lg:shadow-none transition-transform duration-300 z-40 ${
+        className={`fixed lg:static right-0 top-0 h-screen w-70 bg-[#17536e] transition-transform duration-300 z-40 flex flex-col ${
           isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* Close button for mobile */}
-
-        {/* Navigation Items */}
-        <nav className="px-3 sm:px-4 pb-6 flex flex-col space-y-5 mt-4 h-full">
+        {/* Logo Section */}
+        <div className="p-4 border-b border-white/10">
           <Link
-            href="/"
-            className="w-full flex items-center sm:gap-3 px-3 sm:px-4 py-3 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm transition-all hover:border-yellow-300/60 hover:shadow-lg"
+            href="/dashboard"
+            className="flex items-center gap-3 text-white"
           >
-            <div className="flex items-center justify-between w-full gap-3 text-yellow-100">
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-lg text-yellow-100 lg:hidden cursor-pointer"
-                aria-label="إغلاق القائمة الجانبية"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-              <div className="flex items-center gap-3">
-                <span className="bg-yellow-400/90 text-slate-900 p-2 rounded-2xl hidden sm:inline-flex shadow-sm">
-                  <Scale />
-                </span>
-                <p className="text-lg font-semibold">مكتبي</p>
-              </div>
-              <span className="text-xs uppercase tracking-[0.2em] text-white/60">
-                Elite
-              </span>
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+              <Scale className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">مكتبي</h1>
+              <p className="text-[10px] text-white/60 uppercase tracking-wider">
+                Management System
+              </p>
             </div>
           </Link>
 
-          <div className="flex-1 overflow-y-auto">
-            <ul className="space-y-2">
-              {navItems.map((item) => (
-                <li key={item.label}>
-                  {item.submenu ? (
-                    <>
-                      <button
-                        onClick={() => toggleSubmenu(item.label)}
-                        className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all text-sm sm:text-base border border-transparent ${
-                          expandedItems.includes(item.label)
-                            ? "bg-white/10 border-yellow-300/60 text-yellow-200 shadow-lg shadow-yellow-900/20"
-                            : "text-gray-200 hover:bg-white/5 hover:border-white/10"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2 sm:gap-3">
-                          {item.icon}
-                          {item.label}
-                        </span>
-                        <svg
-                          className={`w-4 h-4 transition-transform ${
-                            expandedItems.includes(item.label)
-                              ? "rotate-180"
-                              : ""
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                          />
-                        </svg>
-                      </button>
-                      {expandedItems.includes(item.label) && (
-                        <ul className="mt-2 mr-6 sm:mr-8 space-y-1.5 border-r border-white/10 pr-3 sm:pr-4">
-                          {item.submenu.map((subitem) => (
-                            <li key={subitem.label}>
-                              <Link
-                                href={subitem.href}
-                                className={`block px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors border border-transparent ${
-                                  isActiveRoute(subitem.href)
-                                    ? "bg-yellow-400/20 text-yellow-100 border-yellow-300/60"
-                                    : "text-gray-300 hover:text-white hover:bg-white/5 hover:border-white/10"
-                                }`}
-                                onClick={() => {
-                                  if (window.innerWidth < 1024) onClose?.();
-                                }}
-                              >
-                                {subitem.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </>
-                  ) : (
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all text-sm sm:text-base border border-transparent ${
-                        isActiveRoute(item.href)
-                          ? "bg-yellow-400/90 text-slate-900 font-semibold shadow-xl shadow-yellow-900/30"
-                          : "text-gray-100 hover:bg-white/5 hover:border-white/10"
+          {/* Mobile Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute left-3 top-4 p-2 hover:bg-white/10 rounded-lg text-white lg:hidden"
+            aria-label="إغلاق القائمة"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+          <ul className="space-y-1">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                {item.submenu ? (
+                  <>
+                    <button
+                      onClick={() => toggleSubmenu(item.label)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-all group ${
+                        expandedItems.includes(item.label)
+                          ? "bg-white/15 text-white"
+                          : "text-white/80 hover:bg-white/10 hover:text-white"
                       }`}
-                      onClick={() => {
-                        if (window.innerWidth < 1024) onClose?.();
-                      }}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span
+                          className={`transition-colors ${
+                            expandedItems.includes(item.label)
+                              ? "text-white"
+                              : "text-white/70 group-hover:text-white"
+                          }`}
+                        >
+                          {item.icon}
+                        </span>
+                        <span className="font-medium">{item.label}</span>
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`transition-transform duration-200 ${
+                          expandedItems.includes(item.label) ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    {expandedItems.includes(item.label) && (
+                      <ul className="mt-1 mr-4 space-y-1 border-r-2 border-white/20 pr-4">
+                        {item.submenu.map((subitem) => (
+                          <li key={subitem.label}>
+                            <Link
+                              href={subitem.href}
+                              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all ${
+                                isActiveRoute(subitem.href)
+                                  ? "bg-white text-[#17536e] font-semibold"
+                                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                              }`}
+                              onClick={() => {
+                                if (window.innerWidth < 1024) onClose?.();
+                              }}
+                            >
+                              {subitem.icon && (
+                                <span
+                                  className={
+                                    isActiveRoute(subitem.href)
+                                      ? "text-[#6B1D2C]"
+                                      : ""
+                                  }
+                                >
+                                  {subitem.icon}
+                                </span>
+                              )}
+                              {subitem.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all group ${
+                      isActiveRoute(item.href)
+                        ? "bg-white text-[#17536e] font-semibold shadow-lg"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                    }`}
+                    onClick={() => {
+                      if (window.innerWidth < 1024) onClose?.();
+                    }}
+                  >
+                    <span
+                      className={`transition-colors ${
+                        isActiveRoute(item.href)
+                          ? "text-[#17536e]"
+                          : "text-white/70 group-hover:text-white"
+                      }`}
                     >
                       {item.icon}
-                      {item.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+                    </span>
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="mr-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                    <ChevronLeft
+                      size={16}
+                      className={`mr-auto opacity-0 group-hover:opacity-100 transition-opacity ${
+                        isActiveRoute(item.href) ? "opacity-100" : ""
+                      }`}
+                    />
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
         </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10">
+          <div className="text-center text-white/50 text-xs">
+            <p>© 2025 مكتبي</p>
+            <p className="mt-1">الإصدار 1.0.0</p>
+          </div>
+        </div>
       </aside>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      `}</style>
     </>
   );
 };

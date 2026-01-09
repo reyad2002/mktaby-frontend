@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
-  ArrowRight,
   Briefcase,
   CalendarDays,
   Clock,
@@ -490,12 +488,14 @@ function ConfirmDeleteModal({
   );
 }
 
-/* ========== Main Page Component ========== */
-export default function CaseSessionsPage() {
-  const params = useParams();
-  const router = useRouter();
+/* ========== Component Props ========== */
+interface CaseSessionsProps {
+  caseId: number;
+}
+
+/* ========== Main Component ========== */
+export default function CaseSessions({ caseId }: CaseSessionsProps) {
   const queryClient = useQueryClient();
-  const caseId = Number(params.id);
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -583,31 +583,6 @@ export default function CaseSessionsPage() {
       deleteMutation.mutate(deleteSessionId);
     }
   };
-
-  // Invalid case ID
-  if (!Number.isFinite(caseId) || caseId <= 0) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-6 text-center shadow-sm">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle size={26} />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900 mb-1">
-            معرف قضية غير صالح
-          </h2>
-          <p className="text-sm text-slate-600 mb-5">
-            تأكد من الرابط أو اختر قضية من القائمة.
-          </p>
-          <button
-            onClick={() => router.push("/dashboard/cases")}
-            className="w-full rounded-xl bg-teal-600 text-white font-semibold py-3 flex items-center justify-center gap-2"
-          >
-            <ArrowRight size={18} /> العودة للقضايا
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <section className={ui.page}>

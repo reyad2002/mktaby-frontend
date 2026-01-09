@@ -251,23 +251,42 @@ export default function AddCaseForm({ onSuccess, onCancel }: AddCaseFormProps) {
   const selectedLawyers = watch("caseLawyers");
 
   const onSubmit = (data: AddCaseFormData) => {
-    const payload = {
-      ...data,
+    // Build payload, excluding closedAt if empty
+    const payload: Record<string, unknown> = {
+      caseNumber: data.caseNumber,
+      name: data.name,
       caseType: data.caseType as CaseTypeValues,
       caseStatus: data.caseStatus as CaseStatusValues,
       clientRole: data.clientRole as ClientRoleValues,
+      isPrivate: data.isPrivate,
+      clientId: data.clientId,
+      opponent: data.opponent,
+      courtId: data.courtId,
       openedAt: new Date(data.openedAt).toISOString(),
-      closedAt: data.closedAt ? new Date(data.closedAt).toISOString() : null,
-      notes: data.notes || null,
+      caseLawyers: data.caseLawyers,
     };
-    createMutation.mutate(payload, {
-      onSuccess: (response) => {
-        if (response?.succeeded) {
-          reset();
-          onSuccess?.();
-        }
-      },
-    });
+
+    // Only add optional fields if they have values
+    if (data.notes && data.notes.trim()) {
+      payload.notes = data.notes;
+    }
+    if (data.closedAt) {
+      payload.closedAt = new Date(data.closedAt).toISOString();
+    }
+
+    console.log("Submitting payload:", payload);
+
+    createMutation.mutate(
+      payload as Parameters<typeof createMutation.mutate>[0],
+      {
+        onSuccess: (response) => {
+          if (response?.succeeded) {
+            reset();
+            onSuccess?.();
+          }
+        },
+      }
+    );
   };
 
   const toggleLawyer = (lawyerId: number) => {

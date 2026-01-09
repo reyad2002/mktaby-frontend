@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -326,10 +325,13 @@ function SectionCard({
   );
 }
 
-/* ─────────────────────────────── Main Page ─────────────────────────────── */
-export default function CasePaymentsPage() {
-  const params = useParams();
-  const caseId = Number(params.id);
+/* ─────────────────────────────── Component Props ─────────────────────────────── */
+interface CasePaymentsProps {
+  caseId: number;
+}
+
+/* ─────────────────────────────── Main Component ─────────────────────────────── */
+export default function CasePayments({ caseId }: CasePaymentsProps) {
   const queryClient = useQueryClient();
 
   // Section toggles

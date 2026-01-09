@@ -25,9 +25,18 @@ import {
 import toast from "react-hot-toast";
 
 import { getCaseById } from "@/features/cases/apis/casesApis";
-import { getCaseFees, deleteCaseFee } from "@/features/accounting/apis/CaseFeesApi";
-import { getCaseExpenses, deleteCaseExpense } from "@/features/accounting/apis/CaseExpensesApi";
-import { getFeePayments, deleteFeePayment } from "@/features/accounting/apis/FeePaymentApi";
+import {
+  getCaseFees,
+  deleteCaseFee,
+} from "@/features/accounting/apis/CaseFeesApi";
+import {
+  getCaseExpenses,
+  deleteCaseExpense,
+} from "@/features/accounting/apis/CaseExpensesApi";
+import {
+  getFeePayments,
+  deleteFeePayment,
+} from "@/features/accounting/apis/FeePaymentApi";
 
 import AddCaseFeeForm from "@/features/accounting/components/AddCaseFeeForm";
 import EditCaseFeeForm from "@/features/accounting/components/EditCaseFeeForm";
@@ -66,10 +75,28 @@ const getPaymentMethodLabel = (method: string) => {
 };
 
 const getStatusInfo = (status: string) => {
-  const statusMap: Record<string, { icon: typeof CheckCircle2; color: string; bg: string; label: string }> = {
-    Paid: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", label: "مدفوع" },
-    Unpaid: { icon: Clock, color: "text-amber-600", bg: "bg-amber-50", label: "قيد الانتظار" },
-    Overdue: { icon: XCircle, color: "text-rose-600", bg: "bg-rose-50", label: "متأخر" },
+  const statusMap: Record<
+    string,
+    { icon: typeof CheckCircle2; color: string; bg: string; label: string }
+  > = {
+    Paid: {
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      label: "مدفوع",
+    },
+    Unpaid: {
+      icon: Clock,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      label: "قيد الانتظار",
+    },
+    Overdue: {
+      icon: XCircle,
+      color: "text-rose-600",
+      bg: "bg-rose-50",
+      label: "متأخر",
+    },
   };
   return statusMap[status] || statusMap["Unpaid"];
 };
@@ -159,7 +186,11 @@ function ConfirmDeleteModal({
             className={ui.btnDanger + " flex-1"}
             disabled={isLoading}
           >
-            {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              <Trash2 size={16} />
+            )}
             حذف
           </button>
         </div>
@@ -183,11 +214,36 @@ function SummaryCard({
   subtitle?: string;
 }) {
   const colors = {
-    blue: { bg: "bg-blue-50", icon: "text-blue-600", value: "text-blue-700", border: "border-blue-200/60" },
-    emerald: { bg: "bg-emerald-50", icon: "text-emerald-600", value: "text-emerald-700", border: "border-emerald-200/60" },
-    orange: { bg: "bg-orange-50", icon: "text-orange-600", value: "text-orange-700", border: "border-orange-200/60" },
-    rose: { bg: "bg-rose-50", icon: "text-rose-600", value: "text-rose-700", border: "border-rose-200/60" },
-    purple: { bg: "bg-purple-50", icon: "text-purple-600", value: "text-purple-700", border: "border-purple-200/60" },
+    blue: {
+      bg: "bg-blue-50",
+      icon: "text-blue-600",
+      value: "text-blue-700",
+      border: "border-blue-200/60",
+    },
+    emerald: {
+      bg: "bg-emerald-50",
+      icon: "text-emerald-600",
+      value: "text-emerald-700",
+      border: "border-emerald-200/60",
+    },
+    orange: {
+      bg: "bg-orange-50",
+      icon: "text-orange-600",
+      value: "text-orange-700",
+      border: "border-orange-200/60",
+    },
+    rose: {
+      bg: "bg-rose-50",
+      icon: "text-rose-600",
+      value: "text-rose-700",
+      border: "border-rose-200/60",
+    },
+    purple: {
+      bg: "bg-purple-50",
+      icon: "text-purple-600",
+      value: "text-purple-700",
+      border: "border-purple-200/60",
+    },
   };
   const c = colors[color];
 
@@ -232,16 +288,22 @@ function SectionCard({
         className="w-full flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 hover:bg-slate-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconColor}`}>
+          <span
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconColor}`}
+          >
             <Icon size={20} />
           </span>
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-slate-700">{formatCurrency(total)}</span>
+          <span className="text-xl font-bold text-slate-700">
+            {formatCurrency(total)}
+          </span>
           <ChevronDown
             size={20}
-            className={`text-slate-600 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`text-slate-600 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </div>
       </button>
@@ -281,12 +343,20 @@ export default function CasePaymentsPage() {
   const [showDeleteFee, setShowDeleteFee] = useState<number | null>(null);
 
   const [showAddExpense, setShowAddExpense] = useState(false);
-  const [showEditExpense, setShowEditExpense] = useState<CaseExpenseDto | null>(null);
-  const [showDeleteExpense, setShowDeleteExpense] = useState<number | null>(null);
+  const [showEditExpense, setShowEditExpense] = useState<CaseExpenseDto | null>(
+    null
+  );
+  const [showDeleteExpense, setShowDeleteExpense] = useState<number | null>(
+    null
+  );
 
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [showEditPayment, setShowEditPayment] = useState<FeePaymentDto | null>(null);
-  const [showDeletePayment, setShowDeletePayment] = useState<number | null>(null);
+  const [showEditPayment, setShowEditPayment] = useState<FeePaymentDto | null>(
+    null
+  );
+  const [showDeletePayment, setShowDeletePayment] = useState<number | null>(
+    null
+  );
 
   // Queries
   const { data: caseData, isLoading: caseLoading } = useQuery({
@@ -295,19 +365,31 @@ export default function CasePaymentsPage() {
     enabled: !!caseId,
   });
 
-  const { data: feesData, isLoading: feesLoading, isFetching: feesFetching } = useQuery({
+  const {
+    data: feesData,
+    isLoading: feesLoading,
+    isFetching: feesFetching,
+  } = useQuery({
     queryKey: ["caseFees", { CaseId: caseId }],
     queryFn: () => getCaseFees({ CaseId: caseId, PageSize: 100 }),
     enabled: !!caseId,
   });
 
-  const { data: expensesData, isLoading: expensesLoading, isFetching: expensesFetching } = useQuery({
+  const {
+    data: expensesData,
+    isLoading: expensesLoading,
+    isFetching: expensesFetching,
+  } = useQuery({
     queryKey: ["caseExpenses", { CaseId: caseId }],
     queryFn: () => getCaseExpenses({ CaseId: caseId, PageSize: 100 }),
     enabled: !!caseId,
   });
 
-  const { data: paymentsData, isLoading: paymentsLoading, isFetching: paymentsFetching } = useQuery({
+  const {
+    data: paymentsData,
+    isLoading: paymentsLoading,
+    isFetching: paymentsFetching,
+  } = useQuery({
     queryKey: ["feePayments", { CaseId: caseId }],
     queryFn: () => getFeePayments({ CaseId: caseId, PageSize: 100 }),
     enabled: !!caseId,
@@ -377,15 +459,23 @@ export default function CasePaymentsPage() {
   const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
   const totalDue = totalFees + totalExpenses;
   const balance = totalDue - totalPayments;
-  const paymentPercentage = totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
+  const paymentPercentage =
+    totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
 
-  const isLoading = caseLoading || feesLoading || expensesLoading || paymentsLoading;
+  const isLoading =
+    caseLoading || feesLoading || expensesLoading || paymentsLoading;
   const isFetching = feesFetching || expensesFetching || paymentsFetching;
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["caseFees", { CaseId: caseId }] });
-    queryClient.invalidateQueries({ queryKey: ["caseExpenses", { CaseId: caseId }] });
-    queryClient.invalidateQueries({ queryKey: ["feePayments", { CaseId: caseId }] });
+    queryClient.invalidateQueries({
+      queryKey: ["caseFees", { CaseId: caseId }],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["caseExpenses", { CaseId: caseId }],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["feePayments", { CaseId: caseId }],
+    });
     toast.success("جاري تحديث البيانات...");
   };
 
@@ -409,9 +499,12 @@ export default function CasePaymentsPage() {
               <Wallet className="text-white" size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">المحاسبة المالية</h1>
+              <h1 className="text-xl font-bold text-slate-900">
+                المحاسبة المالية
+              </h1>
               <p className="text-sm text-slate-500">
-                {caseDetails?.name || "القضية"} - {caseDetails?.caseNumber || ""}
+                {caseDetails?.name || "القضية"} -{" "}
+                {caseDetails?.caseNumber || ""}
               </p>
             </div>
           </div>
@@ -471,8 +564,12 @@ export default function CasePaymentsPage() {
       {/* Progress Bar */}
       <div className={ui.card + " p-5"}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-slate-700">نسبة السداد</span>
-          <span className="text-sm font-bold text-teal-600">{paymentPercentage}%</span>
+          <span className="text-sm font-medium text-slate-700">
+            نسبة السداد
+          </span>
+          <span className="text-sm font-bold text-teal-600">
+            {paymentPercentage}%
+          </span>
         </div>
         <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
           <div
@@ -501,25 +598,44 @@ export default function CasePaymentsPage() {
           <div className="text-center py-8">
             <Receipt size={40} className="mx-auto text-slate-300 mb-2" />
             <p className="text-slate-600 font-medium">لا توجد رسوم مضافة</p>
-            <p className="text-sm text-slate-500 mt-1">ابدأ بإضافة الرسوم للقضية</p>
+            <p className="text-sm text-slate-500 mt-1">
+              ابدأ بإضافة الرسوم للقضية
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">الوصف</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">تاريخ الاستحقاق</th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    الوصف
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    المبلغ
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    تاريخ الاستحقاق
+                  </th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {fees.map((fee) => (
-                  <tr key={fee.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-3 text-slate-900">{fee.description || `رسم #${fee.id}`}</td>
-                    <td className="py-3 px-3 font-semibold text-slate-900">{formatCurrency(fee.amount)}</td>
-                    <td className="py-3 px-3 text-slate-600">{formatDate(fee.toBePaidAt)}</td>
+                  <tr
+                    key={fee.id}
+                    className="border-b border-slate-100 hover:bg-slate-50"
+                  >
+                    <td className="py-3 px-3 text-slate-900">
+                      {fee.description || `رسم #${fee.id}`}
+                    </td>
+                    <td className="py-3 px-3 font-semibold text-slate-900">
+                      {formatCurrency(fee.amount)}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {formatDate(fee.toBePaidAt)}
+                    </td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -561,25 +677,44 @@ export default function CasePaymentsPage() {
           <div className="text-center py-8">
             <TrendingDown size={40} className="mx-auto text-slate-300 mb-2" />
             <p className="text-slate-600 font-medium">لا توجد مصاريف مضافة</p>
-            <p className="text-sm text-slate-500 mt-1">ابدأ بإضافة المصاريف للقضية</p>
+            <p className="text-sm text-slate-500 mt-1">
+              ابدأ بإضافة المصاريف للقضية
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">تاريخ المصروف</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">تاريخ الإضافة</th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    المبلغ
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    تاريخ المصروف
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    تاريخ الإضافة
+                  </th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {expenses.map((expense) => (
-                  <tr key={expense.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-3 font-semibold text-slate-900">{formatCurrency(expense.amount)}</td>
-                    <td className="py-3 px-3 text-slate-600">{formatDate(expense.expenseDate)}</td>
-                    <td className="py-3 px-3 text-slate-600">{formatDate(expense.createdAt)}</td>
+                  <tr
+                    key={expense.id}
+                    className="border-b border-slate-100 hover:bg-slate-50"
+                  >
+                    <td className="py-3 px-3 font-semibold text-slate-900">
+                      {formatCurrency(expense.amount)}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {formatDate(expense.expenseDate)}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {formatDate(expense.createdAt)}
+                    </td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -621,34 +756,54 @@ export default function CasePaymentsPage() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
             <p className="text-xs text-emerald-700 mb-1">المدفوع</p>
-            <p className="text-lg font-bold text-emerald-700">{formatCurrency(totalPayments)}</p>
+            <p className="text-lg font-bold text-emerald-700">
+              {formatCurrency(totalPayments)}
+            </p>
           </div>
           <div className="rounded-xl bg-rose-50 border border-rose-200 p-3">
             <p className="text-xs text-rose-700 mb-1">المتبقي</p>
-            <p className="text-lg font-bold text-rose-700">{formatCurrency(Math.max(balance, 0))}</p>
+            <p className="text-lg font-bold text-rose-700">
+              {formatCurrency(Math.max(balance, 0))}
+            </p>
           </div>
           <div className="rounded-xl bg-blue-50 border border-blue-200 p-3">
             <p className="text-xs text-blue-700 mb-1">نسبة السداد</p>
-            <p className="text-lg font-bold text-blue-700">{paymentPercentage}%</p>
+            <p className="text-lg font-bold text-blue-700">
+              {paymentPercentage}%
+            </p>
           </div>
         </div>
 
         {payments.length === 0 ? (
           <div className="text-center py-8">
             <CreditCard size={40} className="mx-auto text-slate-300 mb-2" />
-            <p className="text-slate-600 font-medium">لم تتم أي دفعات حتى الآن</p>
-            <p className="text-sm text-slate-500 mt-1">ابدأ بتسجيل دفعة جديدة</p>
+            <p className="text-slate-600 font-medium">
+              لم تتم أي دفعات حتى الآن
+            </p>
+            <p className="text-sm text-slate-500 mt-1">
+              ابدأ بتسجيل دفعة جديدة
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">التاريخ</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">طريقة الدفع</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">الحالة</th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    التاريخ
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    المبلغ
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    طريقة الدفع
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    الحالة
+                  </th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -656,14 +811,29 @@ export default function CasePaymentsPage() {
                   const statusInfo = getStatusInfo(payment.status);
                   const StatusIcon = statusInfo.icon;
                   return (
-                    <tr key={payment.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-3 text-slate-900">{formatDate(payment.paymentDate)}</td>
-                      <td className="py-3 px-3 font-semibold text-slate-900">{formatCurrency(payment.amount)}</td>
-                      <td className="py-3 px-3 text-slate-600">{getPaymentMethodLabel(payment.paymentMethod)}</td>
+                    <tr
+                      key={payment.id}
+                      className="border-b border-slate-100 hover:bg-slate-50"
+                    >
+                      <td className="py-3 px-3 text-slate-900">
+                        {formatDate(payment.paymentDate)}
+                      </td>
+                      <td className="py-3 px-3 font-semibold text-slate-900">
+                        {formatCurrency(payment.amount)}
+                      </td>
+                      <td className="py-3 px-3 text-slate-600">
+                        {getPaymentMethodLabel(payment.paymentMethod)}
+                      </td>
                       <td className="py-3 px-3">
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${statusInfo.bg}`}>
+                        <div
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${statusInfo.bg}`}
+                        >
                           <StatusIcon size={14} className={statusInfo.color} />
-                          <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
+                          <span
+                            className={`text-xs font-medium ${statusInfo.color}`}
+                          >
+                            {statusInfo.label}
+                          </span>
                         </div>
                       </td>
                       <td className="py-3 px-3">
@@ -736,7 +906,10 @@ export default function CasePaymentsPage() {
 
       {/* Add Expense Modal */}
       {showAddExpense && (
-        <ModalShell onClose={() => setShowAddExpense(false)} title="إضافة مصروف جديد">
+        <ModalShell
+          onClose={() => setShowAddExpense(false)}
+          title="إضافة مصروف جديد"
+        >
           <AddCaseExpenseForm
             onSuccess={() => {
               setShowAddExpense(false);
@@ -749,7 +922,10 @@ export default function CasePaymentsPage() {
 
       {/* Edit Expense Modal */}
       {showEditExpense && (
-        <ModalShell onClose={() => setShowEditExpense(null)} title="تعديل المصروف">
+        <ModalShell
+          onClose={() => setShowEditExpense(null)}
+          title="تعديل المصروف"
+        >
           <EditCaseExpenseForm
             expenseId={showEditExpense.id}
             onSuccess={() => {
@@ -774,7 +950,10 @@ export default function CasePaymentsPage() {
 
       {/* Add Payment Modal */}
       {showAddPayment && (
-        <ModalShell onClose={() => setShowAddPayment(false)} title="إضافة دفعة جديدة">
+        <ModalShell
+          onClose={() => setShowAddPayment(false)}
+          title="إضافة دفعة جديدة"
+        >
           <AddFeePaymentForm
             onSuccess={() => {
               setShowAddPayment(false);
@@ -787,7 +966,10 @@ export default function CasePaymentsPage() {
 
       {/* Edit Payment Modal */}
       {showEditPayment && (
-        <ModalShell onClose={() => setShowEditPayment(null)} title="تعديل الدفعة">
+        <ModalShell
+          onClose={() => setShowEditPayment(null)}
+          title="تعديل الدفعة"
+        >
           <EditFeePaymentForm
             paymentId={showEditPayment.id}
             onSuccess={() => {

@@ -2,7 +2,7 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   FileText,
@@ -15,10 +15,15 @@ import {
   Unlock,
   StickyNote,
   UserMinus,
+  ChevronDown,
+  Check,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
-import { createCase, getCaseTypes, getCaseStatuses } from "../apis/casesApis";
+import {
+  useCaseTypes,
+  useCaseStatuses,
+  useCreateCase,
+} from "../hooks/caseHooks";
 import { fetchClients } from "@/features/clients/apis/clientsApi";
 import { getCourtDropdownApi } from "@/features/courts/apis/courtsApis";
 import { fetchUsers } from "@/features/users/apis/usersApi";
@@ -57,41 +62,164 @@ const CLIENT_ROLES: { value: ClientRoleValues; label: string }[] = [
   { value: "Challenger", label: "طاعن" },
 ];
 
+/* ---------------- UI Helpers (Modern Inputs) ---------------- */
+
+const ui = {
+  card: "rounded-2xl border border-slate-300 bg-white shadow-sm",
+  cardHeader:
+    "px-5 py-4 border-b border-slate-300 flex items-center justify-between",
+  cardBody: "p-5",
+  label: "block text-xs font-semibold text-primary mb-1.5",
+  hint: "text-xs text-primary",
+  error: "mt-1 text-xs text-red-600",
+  fieldWrap: "space-y-1",
+  inputBase:
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-primary outline-none transition placeholder:text-primary-400",
+  inputNormal:
+    "border-slate-300 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10",
+  inputError:
+    "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10",
+  icon: "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-primary",
+  inputWithIcon: "pr-10",
+  selectArrow:
+    "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary",
+  btnPrimary:
+    "inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition disabled:opacity-50",
+  btnGhost:
+    "inline-flex items-center gap-2 rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary-50 transition disabled:opacity-50",
+  chip: "inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition",
+};
+
+function Field({
+  label,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={ui.fieldWrap}>
+      <div className="flex items-end justify-between gap-2">
+        <label className={ui.label}>{label}</label>
+        {hint ? <span className={ui.hint}>{hint}</span> : null}
+      </div>
+      {children}
+      {error ? <p className={ui.error}>{error}</p> : null}
+    </div>
+  );
+}
+
+function Input({
+  icon: Icon,
+  error,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  icon: React.ElementType;
+  error?: boolean;
+}) {
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        className={[
+          ui.inputBase,
+          ui.inputWithIcon,
+          error ? ui.inputError : ui.inputNormal,
+          props.className ?? "",
+        ].join(" ")}
+      />
+      <Icon className={ui.icon} size={18} />
+    </div>
+  );
+}
+
+function Select({
+  icon: Icon,
+  error,
+  children,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+  icon: React.ElementType;
+  error?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <select
+        {...props}
+        className={[
+          ui.inputBase,
+          ui.inputWithIcon,
+          "appearance-none",
+          error ? ui.inputError : ui.inputNormal,
+          props.className ?? "",
+        ].join(" ")}
+      >
+        {children}
+      </select>
+      <Icon className={ui.icon} size={18} />
+      <ChevronDown className={ui.selectArrow} size={18} />
+    </div>
+  );
+}
+
+function TextArea({
+  icon: Icon,
+  error,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  icon: React.ElementType;
+  error?: boolean;
+}) {
+  return (
+    <div className="relative">
+      <textarea
+        {...props}
+        className={[
+          ui.inputBase,
+          ui.inputWithIcon,
+          "min-h-[96px] resize-y",
+          error ? ui.inputError : ui.inputNormal,
+          props.className ?? "",
+        ].join(" ")}
+      />
+      <Icon
+        className="pointer-events-none absolute right-3 top-4 text-primary"
+        size={18}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Component ---------------- */
+
 export default function AddCaseForm({ onSuccess, onCancel }: AddCaseFormProps) {
-  const queryClient = useQueryClient();
+  const { data: caseTypes = [] } = useCaseTypes();
+  const { data: caseStatuses = [] } = useCaseStatuses();
 
-  // Fetch case types
-  const { data: caseTypes = [] } = useQuery({
-    queryKey: ["caseTypes"],
-    queryFn: getCaseTypes,
-  });
-
-  // Fetch case statuses
-  const { data: caseStatuses = [] } = useQuery({
-    queryKey: ["caseStatuses"],
-    queryFn: getCaseStatuses,
-  });
-
-  // Fetch clients for dropdown
   const { data: clientsData } = useQuery({
     queryKey: ["clients", { pageSize: 100 }],
     queryFn: () => fetchClients({ pageSize: 100 }),
   });
   const clients = clientsData?.data?.data ?? [];
 
-  // Fetch courts for dropdown
   const { data: courtsData } = useQuery({
     queryKey: ["courtsDropdown"],
     queryFn: () => getCourtDropdownApi({ PageSize: 100 }),
   });
   const courts = courtsData?.data ?? [];
 
-  // Fetch users/lawyers for dropdown
   const { data: usersData } = useQuery({
     queryKey: ["users", { pageSize: 100 }],
     queryFn: () => fetchUsers({ pageSize: 100 }),
   });
   const lawyers = usersData?.data?.data ?? [];
+
+  const createMutation = useCreateCase();
 
   const {
     register,
@@ -122,37 +250,6 @@ export default function AddCaseForm({ onSuccess, onCancel }: AddCaseFormProps) {
 
   const selectedLawyers = watch("caseLawyers");
 
-  const mutation = useMutation({
-    mutationFn: createCase,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم إضافة القضية بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["cases"] });
-        reset();
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر إضافة القضية");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add case error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة القضية"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: AddCaseFormData) => {
     const payload = {
       ...data,
@@ -163,7 +260,14 @@ export default function AddCaseForm({ onSuccess, onCancel }: AddCaseFormProps) {
       closedAt: data.closedAt ? new Date(data.closedAt).toISOString() : null,
       notes: data.notes || null,
     };
-    mutation.mutate(payload);
+    createMutation.mutate(payload, {
+      onSuccess: (response) => {
+        if (response?.succeeded) {
+          reset();
+          onSuccess?.();
+        }
+      },
+    });
   };
 
   const toggleLawyer = (lawyerId: number) => {
@@ -180,425 +284,269 @@ export default function AddCaseForm({ onSuccess, onCancel }: AddCaseFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Case Number */}
-        <div>
-          <label
-            htmlFor="caseNumber"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            رقم القضية
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              id="caseNumber"
-              {...register("caseNumber")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.caseNumber ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="رقم القضية"
-            />
-            <Hash className="absolute left-3 top-2.5 text-gray-400" size={20} />
+      {/* Card Wrapper */}
+      <div className={ui.card}>
+        <div className={ui.cardHeader}>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+              <FileText size={18} />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-primary">إضافة قضية</p>
+              <p className="text-xs text-primary">
+                أدخل بيانات القضية الأساسية
+              </p>
+            </div>
           </div>
-          {errors.caseNumber && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.caseNumber.message}
-            </p>
-          )}
         </div>
 
-        {/* Case Name */}
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            اسم القضية
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              id="name"
-              {...register("name")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="اسم القضية"
-            />
-            <FileText
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
-          </div>
-          {errors.name && (
-            <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-          )}
-        </div>
+        <div className={ui.cardBody}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="رقم القضية" error={errors.caseNumber?.message}>
+              <Input
+                icon={Hash}
+                type="text"
+                placeholder="مثال: 2026/15"
+                {...register("caseNumber")}
+                error={!!errors.caseNumber}
+              />
+            </Field>
 
-        {/* Case Type */}
-        <div>
-          <label
-            htmlFor="caseType"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            نوع القضية
-          </label>
-          <div className="relative">
-            <select
-              id="caseType"
-              {...register("caseType")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.caseType ? "border-red-500" : "border-gray-300"
-              }`}
+            <Field label="اسم القضية" error={errors.name?.message}>
+              <Input
+                icon={FileText}
+                type="text"
+                placeholder="اكتب اسم القضية"
+                {...register("name")}
+                error={!!errors.name}
+              />
+            </Field>
+
+            <Field label="نوع القضية" error={errors.caseType?.message}>
+              <Select
+                icon={Scale}
+                {...register("caseType")}
+                error={!!errors.caseType}
+              >
+                <option value="">اختر نوع القضية</option>
+                {caseTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="حالة القضية" error={errors.caseStatus?.message}>
+              <Select
+                icon={Scale}
+                {...register("caseStatus")}
+                error={!!errors.caseStatus}
+              >
+                <option value="">اختر حالة القضية</option>
+                {caseStatuses.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="العميل" error={errors.clientId?.message}>
+              <Select
+                icon={User}
+                {...register("clientId", { valueAsNumber: true })}
+                error={!!errors.clientId}
+              >
+                <option value={0}>اختر العميل</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="صفة العميل" error={errors.clientRole?.message}>
+              <Select
+                icon={User}
+                {...register("clientRole")}
+                error={!!errors.clientRole}
+              >
+                {CLIENT_ROLES.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="الخصم" error={errors.opponent?.message}>
+              <Input
+                icon={UserMinus}
+                type="text"
+                placeholder="اسم الخصم"
+                {...register("opponent")}
+                error={!!errors.opponent}
+              />
+            </Field>
+
+            <Field label="المحكمة" error={errors.courtId?.message}>
+              <Select
+                icon={Scale}
+                {...register("courtId", { valueAsNumber: true })}
+                error={!!errors.courtId}
+              >
+                <option value={0}>اختر المحكمة</option>
+                {courts.map((court) => (
+                  <option key={court.id} value={court.id}>
+                    {court.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="تاريخ الفتح" error={errors.openedAt?.message}>
+              <Input
+                icon={Calendar}
+                type="date"
+                {...register("openedAt")}
+                error={!!errors.openedAt}
+              />
+            </Field>
+
+            <Field
+              label="تاريخ الإغلاق"
+              hint="اختياري"
+              error={errors.closedAt?.message}
             >
-              <option value="">اختر نوع القضية</option>
-              {caseTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-            <Scale
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
+              <Input
+                icon={Calendar}
+                type="date"
+                {...register("closedAt")}
+                error={!!errors.closedAt}
+              />
+            </Field>
           </div>
-          {errors.caseType && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.caseType.message}
-            </p>
-          )}
-        </div>
 
-        {/* Case Status */}
-        <div>
-          <label
-            htmlFor="caseStatus"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            حالة القضية
-          </label>
-          <div className="relative">
-            <select
-              id="caseStatus"
-              {...register("caseStatus")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.caseStatus ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">اختر حالة القضية</option>
-              {caseStatuses.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
-            <Scale
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
-          </div>
-          {errors.caseStatus && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.caseStatus.message}
-            </p>
-          )}
-        </div>
-
-        {/* Client */}
-        <div>
-          <label
-            htmlFor="clientId"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            العميل
-          </label>
-          <div className="relative">
-            <select
-              id="clientId"
-              {...register("clientId", { valueAsNumber: true })}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.clientId ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value={0}>اختر العميل</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-            <User className="absolute left-3 top-2.5 text-gray-400" size={20} />
-          </div>
-          {errors.clientId && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.clientId.message}
-            </p>
-          )}
-        </div>
-
-        {/* Client Role */}
-        <div>
-          <label
-            htmlFor="clientRole"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            صفة العميل
-          </label>
-          <div className="relative">
-            <select
-              id="clientRole"
-              {...register("clientRole")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.clientRole ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              {CLIENT_ROLES.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-            <User className="absolute left-3 top-2.5 text-gray-400" size={20} />
-          </div>
-          {errors.clientRole && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.clientRole.message}
-            </p>
-          )}
-        </div>
-
-        {/* Opponent */}
-        <div>
-          <label
-            htmlFor="opponent"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            الخصم
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              id="opponent"
-              {...register("opponent")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.opponent ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="اسم الخصم"
-            />
-            <UserMinus
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
-          </div>
-          {errors.opponent && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.opponent.message}
-            </p>
-          )}
-        </div>
-
-        {/* Court */}
-        <div>
-          <label
-            htmlFor="courtId"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            المحكمة
-          </label>
-          <div className="relative">
-            <select
-              id="courtId"
-              {...register("courtId", { valueAsNumber: true })}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.courtId ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value={0}>اختر المحكمة</option>
-              {courts.map((court) => (
-                <option key={court.id} value={court.id}>
-                  {court.name}
-                </option>
-              ))}
-            </select>
-            <Scale
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
-          </div>
-          {errors.courtId && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.courtId.message}
-            </p>
-          )}
-        </div>
-
-        {/* Opened At */}
-        <div>
-          <label
-            htmlFor="openedAt"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            تاريخ الفتح
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              id="openedAt"
-              {...register("openedAt")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.openedAt ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            <Calendar
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
-          </div>
-          {errors.openedAt && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.openedAt.message}
-            </p>
-          )}
-        </div>
-
-        {/* Closed At */}
-        <div>
-          <label
-            htmlFor="closedAt"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            تاريخ الإغلاق (اختياري)
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              id="closedAt"
-              {...register("closedAt")}
-              className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.closedAt ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            <Calendar
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={20}
-            />
-          </div>
-          {errors.closedAt && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.closedAt.message}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Is Private */}
-      <div className="flex items-center gap-3">
-        <Controller
-          name="isPrivate"
-          control={control}
-          render={({ field }) => (
-            <button
-              type="button"
-              onClick={() => field.onChange(!field.value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-                field.value
-                  ? "bg-amber-100 border-amber-400 text-amber-700"
-                  : "bg-gray-100 border-gray-300 text-gray-600"
-              }`}
-            >
-              {field.value ? <Lock size={18} /> : <Unlock size={18} />}
-              {field.value ? "قضية خاصة" : "قضية عامة"}
-            </button>
-          )}
-        />
-      </div>
-
-      {/* Case Lawyers */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Users className="inline-block ml-1" size={18} />
-          المحامون المكلفون
-        </label>
-        <div className="border border-gray-300 rounded-lg p-3 max-h-40 overflow-y-auto">
-          {lawyers.length === 0 ? (
-            <p className="text-gray-500 text-sm">لا يوجد محامون</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {lawyers.map((lawyer) => {
-                const isSelected = selectedLawyers?.includes(lawyer.id);
-                return (
+          {/* Privacy - Segmented */}
+          <div className="mt-5">
+            <label className={ui.label}>الخصوصية</label>
+            <Controller
+              name="isPrivate"
+              control={control}
+              render={({ field }) => (
+                <div className="inline-flex rounded-xl border border-primary bg-primary p-1">
                   <button
-                    key={lawyer.id}
                     type="button"
-                    onClick={() => toggleLawyer(lawyer.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm transition-all border ${
-                      isSelected
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-gray-100 text-gray-700 border-gray-300 hover:border-blue-400"
+                    onClick={() => field.onChange(false)}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                      !field.value
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-white "
                     }`}
                   >
-                    {lawyer.name}
+                    <Unlock size={16} />
+                    قضية عامة
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={() => field.onChange(true)}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                      field.value
+                        ? "bg-amber-50 text-amber-800 shadow-sm"
+                        : "text-white "
+                    }`}
+                  >
+                    <Lock size={16} />
+                    قضية خاصة
+                  </button>
+                </div>
+              )}
+            />
+          </div>
+
+          {/* Lawyers - Chips */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-2">
+              <label className={ui.label}>
+                <Users className="inline-block ml-1" size={16} />
+                المحامون المكلفون
+              </label>
+              <span className="text-xs text-primary">
+                المختار: {selectedLawyers?.length ?? 0}
+              </span>
             </div>
-          )}
-        </div>
-        {errors.caseLawyers && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.caseLawyers.message}
-          </p>
-        )}
-      </div>
 
-      {/* Notes */}
-      <div>
-        <label
-          htmlFor="notes"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          ملاحظات (اختياري)
-        </label>
-        <div className="relative">
-          <textarea
-            id="notes"
-            {...register("notes")}
-            rows={3}
-            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.notes ? "border-red-500" : "border-gray-300"
-            }`}
-            placeholder="ملاحظات إضافية..."
-          />
-          <StickyNote
-            className="absolute left-3 top-2.5 text-gray-400"
-            size={20}
-          />
-        </div>
-        {errors.notes && (
-          <p className="text-red-500 text-sm mt-1">{errors.notes.message}</p>
-        )}
-      </div>
+            <div className="rounded-2xl border border-slate-300 bg-white p-3">
+              {lawyers.length === 0 ? (
+                <p className="text-primary text-sm">لا يوجد محامون</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto">
+                  {lawyers.map((lawyer) => {
+                    const isSelected = selectedLawyers?.includes(lawyer.id);
+                    return (
+                      <button
+                        key={lawyer.id}
+                        type="button"
+                        onClick={() => toggleLawyer(lawyer.id)}
+                        className={[
+                          ui.chip,
+                          isSelected
+                            ? "border-primary bg-primary text-white hover:bg-primary"
+                            : "border-teal-600 bg-teal-50 text-primary",
+                        ].join(" ")}
+                      >
+                        {isSelected ? <Check size={16} /> : null}
+                        {lawyer.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={mutation.isPending}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-        >
-          إلغاء
-        </button>
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-        >
-          {mutation.isPending && <Loader2 className="animate-spin" size={18} />}
-          إضافة القضية
-        </button>
+            {errors.caseLawyers?.message ? (
+              <p className={ui.error}>{errors.caseLawyers.message}</p>
+            ) : null}
+          </div>
+
+          {/* Notes */}
+          <div className="mt-5">
+            <Field label="ملاحظات" hint="اختياري" error={errors.notes?.message}>
+              <TextArea
+                icon={StickyNote}
+                placeholder="ملاحظات إضافية..."
+                rows={4}
+                {...register("notes")}
+                error={!!errors.notes}
+              />
+            </Field>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={createMutation.isPending}
+              className={ui.btnGhost}
+            >
+              إلغاء
+            </button>
+
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className={ui.btnPrimary}
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : null}
+              إضافة القضية
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   );

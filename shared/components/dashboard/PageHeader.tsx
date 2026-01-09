@@ -11,22 +11,15 @@ interface PageHeaderAction {
 }
 
 interface PageHeaderProps {
-  // Required props
   title: string;
   subtitle: string;
   icon: LucideIcon;
-
-  // Optional stats/badges
   isFetching?: boolean;
   countLabel?: string;
-
-  // Optional actions
   onRefresh?: () => void;
   onAdd?: () => void;
   addButtonLabel?: string;
   customActions?: PageHeaderAction[];
-
-  // Optional custom children for complex scenarios
   children?: React.ReactNode;
 }
 
@@ -38,102 +31,113 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   countLabel,
   onRefresh,
   onAdd,
-  addButtonLabel = "إضافة",
+  addButtonLabel = "إضافة جديد",
   customActions = [],
   children,
 }) => {
   return (
-    <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        {/* Title Section */}
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold text-gray-900 flex items-center gap-3">
-            <Icon className="text-blue-600" size={32} />
-            {title}
-          </h1>
-          <p className="text-sm text-gray-600">{subtitle}</p>
+    <div className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 transition-all duration-300">
+      {/* Background Decor - لمسة جمالية خلفية */}
+      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+      
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        
+        {/* Title & Info Section */}
+        <div className="flex items-start md:items-center gap-5">
+          <div className="relative shrink-0">
+            <div className="relative z-10 w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 transition-transform duration-300 hover:scale-105">
+              <Icon className="text-white" size={28} strokeWidth={2.2} />
+            </div>
+            {/* Loading Ring */}
+            {isFetching && (
+              <div className="absolute inset-0 z-0 animate-ping rounded-2xl bg-primary/20 scale-125" />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+                {title}
+              </h1>
+              {countLabel && (
+                <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+                  {countLabel}
+                </span>
+              )}
+            </div>
+            <p className="text-gray-500 font-medium leading-relaxed max-w-xl">
+              {subtitle}
+            </p>
+          </div>
         </div>
 
         {/* Actions Section */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Fetching Indicator */}
-          {isFetching && (
-            <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm border border-blue-200">
-              <span
-                className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"
-                aria-hidden="true"
-              />
-              يتم التحديث...
-            </span>
+          
+          {/* Status Chips */}
+          <div className="flex items-center gap-2">
+            {isFetching && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100/50">
+                <Loader2 size={14} className="animate-spin text-blue-500" />
+                <span className="text-xs font-bold uppercase tracking-wide">جاري التحديث</span>
+              </div>
+            )}
+            {children}
+          </div>
+
+          {/* Separator Line */}
+          {(onRefresh || onAdd || customActions.length > 0) && (
+            <div className="hidden sm:block h-10 w-px bg-gray-100 mx-2" />
           )}
 
-          {/* Count Badge */}
-          {countLabel && (
-            <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 text-gray-700 text-sm border border-gray-200">
-              <span
-                className="h-2 w-2 rounded-full bg-green-500"
-                aria-hidden="true"
-              />
-              {countLabel}
-            </span>
-          )}
-
-          {/* Custom Children (for additional badges or elements) */}
-          {children}
-
-          {/* Refresh Button */}
-          {onRefresh && (
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={isFetching}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="تحديث"
-            >
-              {isFetching ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <RefreshCcw size={16} />
-              )}
-              تحديث
-            </button>
-          )}
-
-          {/* Custom Actions */}
-          {customActions.map((action, index) => {
-            const ActionIcon = action.icon;
-            const buttonClass =
-              action.variant === "primary"
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : action.variant === "ghost"
-                ? "border border-gray-200 text-gray-700 hover:bg-gray-50"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200";
-
-            return (
+          {/* Main Actions Group */}
+          <div className="flex items-center flex-wrap gap-3">
+            {onRefresh && (
               <button
-                key={index}
                 type="button"
-                onClick={action.onClick}
-                disabled={action.disabled}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${buttonClass}`}
+                onClick={onRefresh}
+                disabled={isFetching}
+                className="group flex items-center justify-center w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 disabled:opacity-40"
               >
-                {ActionIcon && <ActionIcon size={18} />}
-                {action.label}
+                <RefreshCcw 
+                  size={20} 
+                  className={`${isFetching ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} 
+                />
               </button>
-            );
-          })}
+            )}
 
-          {/* Add Button */}
-          {onAdd && (
-            <button
-              type="button"
-              onClick={onAdd}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={18} />
-              {addButtonLabel}
-            </button>
-          )}
+            {customActions.map((action, index) => {
+              const ActionIcon = action.icon;
+              const variants = {
+                primary: "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200",
+                ghost: "border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              };
+
+              return (
+                <button
+                  key={index}
+                  onClick={action.onClick}
+                  disabled={action.disabled}
+                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95 disabled:opacity-50 ${variants[action.variant || "secondary"]}`}
+                >
+                  {ActionIcon && <ActionIcon size={18} />}
+                  {action.label}
+                </button>
+              );
+            })}
+
+            {onAdd && (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
+              >
+                <Plus size={20} strokeWidth={3} />
+                <span>{addButtonLabel}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

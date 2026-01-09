@@ -4,3 +4,8 @@
   scroll-behavior: smooth;
   scrollbar-color: #17536e #f0f0f0;
 }
+@theme {
+  --color-primary: #17536e;
+  --color-primary-dark: #144a57;
+  --color-secondary: #f0f0f0;
+}

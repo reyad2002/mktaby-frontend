@@ -7,6 +7,7 @@ import { Loader2, Building2, MapPin, Phone, Map } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { createCourtApi, getCourtTypesApi } from "../apis/courtsApis";
+import { useCreateCourts , useCourtTypes } from "../hooks/courtsHooks";
 import {
   addCourtSchema,
   type AddCourtFormData,
@@ -45,39 +46,14 @@ export default function AddCourtForm({
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: createCourtApi,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم إضافة المحكمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["courts"] });
-        reset();
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر إضافة المحكمة");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add court error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة المحكمة"
-        );
-      }
-    },
-  });
-
+  const mutation = useCreateCourts();
   const onSubmit = (data: AddCourtFormData) => {
     mutation.mutate(data);
+    reset();
+    toast.success("تمت إضافة المحكمة بنجاح");
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   return (

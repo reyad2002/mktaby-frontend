@@ -7,6 +7,7 @@ import { Loader2, User, Mail, Phone, MapPin, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { addClient } from "../apis/clientsApi";
+import { useAddClient } from "../hooks/clientsHooks";
 import {
   addClientSchema,
   type AddClientFormData,
@@ -41,36 +42,7 @@ export default function AddClientForm({
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: addClient,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم إضافة العميل بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-        reset();
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر إضافة العميل");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add client error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة العميل"
-        );
-      }
-    },
-  });
+  const mutation = useAddClient();
 
   const onSubmit = (data: AddClientFormData) => {
     mutation.mutate(data);

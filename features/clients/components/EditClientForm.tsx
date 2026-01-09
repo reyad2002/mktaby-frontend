@@ -2,17 +2,15 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {  useQueryClient } from "@tanstack/react-query";
 import { Loader2, User, Mail, Phone, MapPin, Building2 } from "lucide-react";
-import toast from "react-hot-toast";
 import { useEffect } from "react";
 
-import { updateClient, getClientById } from "../apis/clientsApi";
 import {
   updateClientSchema,
   type UpdateClientFormData,
 } from "../validations/updateClientValidation";
-
+import { useUpdateClient, useClientById } from "../hooks/clientsHooks";
 interface EditClientFormProps {
   clientId: number;
   onSuccess?: () => void;
@@ -25,13 +23,10 @@ export default function EditClientForm({
   onCancel,
 }: EditClientFormProps) {
   const queryClient = useQueryClient();
+  
 
   // Fetch client data
-  const { data: client, isLoading } = useQuery({
-    queryKey: ["client", clientId],
-    queryFn: () => getClientById(clientId),
-    enabled: !!clientId,
-  });
+  const { data: client, isLoading } = useClientById(clientId);
 
   const {
     register,
@@ -68,39 +63,18 @@ export default function EditClientForm({
     }
   }, [client, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: UpdateClientFormData) => updateClient(clientId, data),
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم تحديث العميل بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-        queryClient.invalidateQueries({ queryKey: ["client", clientId] });
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر تحديث العميل");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Update client error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء تحديث العميل"
-        );
-      }
-    },
-  });
-
+  const mutation = useUpdateClient();
   const onSubmit = (data: UpdateClientFormData) => {
-    mutation.mutate(data);
+    mutation.mutate(
+      { id: clientId, clientData: data },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["clients"] });
+          queryClient.invalidateQueries({ queryKey: ["client", clientId] });
+          onSuccess?.();
+        },
+      }
+    );
   };
 
   if (isLoading) {

@@ -39,8 +39,6 @@ import type {
   GetCasesQuery,
   CaseListItem,
 } from "@/features/cases/types/casesTypes";
-import { getClientById } from "@/features/clients/apis/clientsApi";
-import { useQuery } from "@tanstack/react-query";
 
 const DEFAULT_FILTERS: GetCasesQuery = {
   PageNumber: 1,
@@ -197,7 +195,6 @@ export default function CasesPage() {
   const [filters, setFilters] = useState<GetCasesQuery>(DEFAULT_FILTERS);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editCaseId, setEditCaseId] = useState<number | null>(null);
-  const [clientId, setClientId] = useState<number | null>(null);
   useLockBodyScroll(showEditModal);
 
   // Lookups using hooks
@@ -513,7 +510,7 @@ export default function CasesPage() {
       <div className="rounded-3xl bg-white/80 backdrop-blur-xl border border-gray-200/60 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] overflow-hidden transition-all">
         {/* Header Area */}
         <div className="px-6 py-5 border-b border-gray-100/80 flex flex-wrap items-center justify-between gap-4 relative">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
+          <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-primary/40 via-primary to-primary/40" />
 
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -766,10 +763,10 @@ export default function CasesPage() {
                   </td>
                 </tr>
               ) : (
-                cases.map((caseItem, index) => (
+                cases.map((caseItem) => (
                   <tr
                     key={caseItem.id}
-                    className="group transition-all duration-200 hover:bg-primary/[0.02]"
+                    className="group transition-all duration-200 hover:bg-primary/2"
                   >
                     {/* رقم القضية المميز */}
                     <td className="px-6 py-5 whitespace-nowrap">
@@ -780,9 +777,14 @@ export default function CasesPage() {
 
                     {/* الاسم وID */}
                     <td className="px-6 py-5">
-                      <div className="flex flex-col gap-1 max-w-[340px]">
+                      <button
+                        onClick={() =>
+                          router.push(`/dashboard/cases/${caseItem.id}`)
+                        }
+                        className="flex flex-col gap-1 max-w-85 cursor-pointer"
+                      >
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 leading-tight group-hover:text-primary transition-colors">
+                          <span className=" underline font-bold text-gray-900 leading-tight group-hover:text-primary transition-colors">
                             {caseItem.name}
                           </span>
                           {caseItem.isPrivate && (
@@ -794,10 +796,10 @@ export default function CasesPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] font-medium tracking-wider text-gray-400 uppercase">
+                        {/* <span className="text-[10px] font-medium tracking-wider text-gray-400 uppercase">
                           ID: {caseItem.id}
-                        </span>
-                      </div>
+                        </span> */}
+                      </button>
                     </td>
 
                     {/* النوع */}

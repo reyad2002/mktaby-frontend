@@ -1,7 +1,5 @@
 "use client";
-
 import { useEffect, useMemo, useState, useCallback, memo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
   Scale,
@@ -27,18 +25,17 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import {
-  getCourtsResourcesApi,
-  softDeleteCourtApi,
-  hardDeleteCourtApi,
-  restoreCourtApi,
-} from "@/features/courts/apis/courtsApis";
 
+import {
+  useCourtsResources,
+  useSoftDeleteCourt,
+  useHardDeleteCourt,
+  useRestoreCourt,
+} from "@/features/courts/hooks/courtsHooks";
 import AddCourtForm from "@/features/courts/components/AddCourtForm";
 import EditCourtForm from "@/features/courts/components/EditCourtForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import ConfirmDialog from "@/shared/components/ui/ConfirmDialog";
-import Tooltip from "@/shared/components/ui/Tooltip";
 import type {
   Params,
   CourtsResource,
@@ -94,7 +91,7 @@ function ModalShell({
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
             {Icon ? (
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                 <Icon size={18} className={iconClassName} />
               </span>
             ) : null}
@@ -243,54 +240,11 @@ export default function CourtsPage() {
 
   useLockBodyScroll(showAddCourtModal || showEditModal);
 
-  const queryClient = useQueryClient();
 
-  const softDeleteMutation = useMutation({
-    mutationFn: softDeleteCourtApi,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم أرشفة المحكمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["courts"] });
-      } else toast.error(response?.message || "تعذر أرشفة المحكمة");
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        err?.response?.data?.message || "حدث خطأ أثناء أرشفة المحكمة"
-      );
-    },
-  });
+  const softDeleteMutation = useSoftDeleteCourt();
 
-  const hardDeleteMutation = useMutation({
-    mutationFn: hardDeleteCourtApi,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم حذف المحكمة نهائياً");
-        queryClient.invalidateQueries({ queryKey: ["courts"] });
-      } else toast.error(response?.message || "تعذر حذف المحكمة");
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء حذف المحكمة");
-    },
-  });
-
-  const restoreMutation = useMutation({
-    mutationFn: restoreCourtApi,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم استعادة المحكمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["courts"] });
-      } else toast.error(response?.message || "تعذر استعادة المحكمة");
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        err?.response?.data?.message || "حدث خطأ أثناء استعادة المحكمة"
-      );
-    },
-  });
-
+  const hardDeleteMutation = useHardDeleteCourt();
+  const restoreMutation = useRestoreCourt();
   const handleSoftDelete = useCallback((id: number, name: string) => {
     setDeleteDialog({ open: true, type: "soft", court: { id, name } });
   }, []);
@@ -336,12 +290,8 @@ export default function CourtsPage() {
     } satisfies Params;
   }, [filters]);
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ["courts", queryParams],
-    queryFn: () => getCourtsResourcesApi(queryParams),
-    staleTime: 10_000,
-  });
-
+  const { data, isLoading, isError, error, isFetching, refetch } =
+    useCourtsResources(queryParams);
   const courts: CourtsResource[] = data?.data?.data ?? [];
   const totalCount = data?.data?.count ?? 0;
 
@@ -370,7 +320,7 @@ export default function CourtsPage() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-white" />
+        <div className="absolute inset-0 bg-linear-to-b from-slate-50 via-white to-white" />
       </div>
 
       <PageHeader
@@ -386,10 +336,10 @@ export default function CourtsPage() {
       {/* Filters (Cases UI) */}
       <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
         <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-500" />
 
           <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
               <SlidersHorizontal size={16} className="text-blue-700" />
             </span>
             فلاتر البحث
@@ -548,7 +498,7 @@ export default function CourtsPage() {
         <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-b from-gray-50 to-white sticky top-0 z-10">
+              <thead className="bg-linear-to-b from-gray-50 to-white sticky top-0 z-10">
                 <tr className="text-right text-xs font-semibold text-gray-700">
                   <th className="px-4 py-3 whitespace-nowrap">ID</th>
                   <th className="px-4 py-3">اسم المحكمة</th>
@@ -566,20 +516,20 @@ export default function CourtsPage() {
                     key={court.id}
                     className={`text-sm text-gray-800 transition-colors ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-                    } hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-transparent`}
+                    } hover:bg-linear-to-r hover:from-blue-50/60 hover:to-transparent`}
                   >
                     <td className="px-4 py-4 text-gray-500 whitespace-nowrap">
                       {court.id}
                     </td>
 
-                    <td className="px-4 py-4 min-w-[260px]">
+                    <td className="px-4 py-4 min-w-65">
                       <div className="flex items-center gap-3">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                           <Building2 size={18} className="text-blue-700" />
                         </span>
                         <div className="min-w-0">
                           <div
-                            className="font-semibold text-gray-900 truncate max-w-[360px]"
+                            className="font-semibold text-gray-900 truncate max-w-90"
                             title={court.name}
                           >
                             {court.name}
@@ -608,9 +558,9 @@ export default function CourtsPage() {
                       </div>
                     </td>
 
-                    <td className="px-4 py-4 max-w-[360px]">
+                    <td className="px-4 py-4 max-w-90">
                       <span
-                        className="text-gray-700 break-words"
+                        className="text-gray-700 wrap-break-word"
                         title={court.address}
                       >
                         {court.address || "—"}

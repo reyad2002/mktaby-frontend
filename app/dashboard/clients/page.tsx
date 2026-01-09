@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
   Users,
@@ -25,14 +24,13 @@ import {
   ChevronRight,
   Info,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  fetchClients,
-  softDeleteClient,
-  hardDeleteClient,
-  restoreClient,
-} from "@/features/clients/apis/clientsApi";
+  useClients,
+  useRestoreClient,
+  useHardDeleteClient,
+  useSoftDeleteClient,
+} from "@/features/clients/hooks/clientsHooks";
 import AddClientForm from "@/features/clients/components/AddClientForm";
 import EditClientForm from "@/features/clients/components/EditClientForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
@@ -225,7 +223,9 @@ function EmptyState() {
           <Users className="text-gray-500" size={20} />
         </div>
         <p className="text-gray-800 font-semibold">لا توجد عملاء مطابقين.</p>
-        <p className="text-sm text-gray-600 mt-1">جرّب تغيير الفلاتر أو البحث.</p>
+        <p className="text-sm text-gray-600 mt-1">
+          جرّب تغيير الفلاتر أو البحث.
+        </p>
       </div>
     </div>
   );
@@ -240,57 +240,13 @@ export default function ClientsPage() {
 
   useLockBodyScroll(showAddClientModal || showEditModal);
 
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
-  const softDeleteMutation = useMutation({
-    mutationFn: softDeleteClient,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم أرشفة العميل بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-      } else {
-        toast.error(response?.message || "تعذر أرشفة العميل");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء أرشفة العميل");
-    },
-  });
+  const softDeleteMutation = useSoftDeleteClient();
 
-  const hardDeleteMutation = useMutation({
-    mutationFn: hardDeleteClient,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم حذف العميل نهائياً");
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-      } else {
-        toast.error(response?.message || "تعذر حذف العميل");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء حذف العميل");
-    },
-  });
+  const hardDeleteMutation = useHardDeleteClient();
 
-  const restoreMutation = useMutation({
-    mutationFn: restoreClient,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم استعادة العميل بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-      } else {
-        toast.error(response?.message || "تعذر استعادة العميل");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        err?.response?.data?.message || "حدث خطأ أثناء استعادة العميل"
-      );
-    },
-  });
+  const restoreMutation = useRestoreClient();
 
   const handleSoftDelete = (id: number, name: string) => {
     if (
@@ -326,11 +282,8 @@ export default function ClientsPage() {
     } satisfies ClientsQueryParams;
   }, [filters]);
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ["clients", queryParams],
-    queryFn: () => fetchClients(queryParams),
-    staleTime: 10_000,
-  });
+  const { data, isLoading, isError, error, isFetching, refetch } =
+    useClients(queryParams);
 
   const clients: ClientSummary[] = data?.data?.data ?? [];
   const totalCount = data?.data?.count ?? 0;
@@ -413,7 +366,10 @@ export default function ClientsPage() {
               onClick={() => refetch()}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+              <RefreshCw
+                size={16}
+                className={isFetching ? "animate-spin" : ""}
+              />
               تحديث
             </button>
 
@@ -573,7 +529,9 @@ export default function ClientsPage() {
       {isLoading ? (
         <LoadingState />
       ) : isError ? (
-        <ErrorState message={error instanceof Error ? error.message : undefined} />
+        <ErrorState
+          message={error instanceof Error ? error.message : undefined}
+        />
       ) : clients.length === 0 ? (
         <EmptyState />
       ) : (
@@ -647,13 +605,18 @@ export default function ClientsPage() {
                     </td>
 
                     <td className="px-4 py-4 max-w-[280px]" dir="ltr">
-                      <span className="text-gray-700 truncate block" title={client.email}>
+                      <span
+                        className="text-gray-700 truncate block"
+                        title={client.email}
+                      >
                         {client.email}
                       </span>
                     </td>
 
                     <td className="px-4 py-4 text-gray-700 whitespace-nowrap">
-                      {client.createdAt ? formatDateShortAr(client.createdAt) : "—"}
+                      {client.createdAt
+                        ? formatDateShortAr(client.createdAt)
+                        : "—"}
                     </td>
 
                     <td className="px-4 py-4">
@@ -661,7 +624,9 @@ export default function ClientsPage() {
                         <IconButton
                           title="عرض"
                           variant="blue"
-                          onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                          onClick={() =>
+                            router.push(`/dashboard/clients/${client.id}`)
+                          }
                         >
                           <Eye size={16} />
                         </IconButton>
@@ -682,7 +647,9 @@ export default function ClientsPage() {
                             title="استعادة"
                             variant="green"
                             disabled={restoreMutation.isPending}
-                            onClick={() => handleRestore(client.id, client.name)}
+                            onClick={() =>
+                              handleRestore(client.id, client.name)
+                            }
                           >
                             {restoreMutation.isPending ? (
                               <Loader2 size={16} className="animate-spin" />
@@ -695,7 +662,9 @@ export default function ClientsPage() {
                             title="أرشفة"
                             variant="orange"
                             disabled={softDeleteMutation.isPending}
-                            onClick={() => handleSoftDelete(client.id, client.name)}
+                            onClick={() =>
+                              handleSoftDelete(client.id, client.name)
+                            }
                           >
                             {softDeleteMutation.isPending ? (
                               <Loader2 size={16} className="animate-spin" />
@@ -709,7 +678,9 @@ export default function ClientsPage() {
                           title="حذف"
                           variant="red"
                           disabled={hardDeleteMutation.isPending}
-                          onClick={() => handleHardDelete(client.id, client.name)}
+                          onClick={() =>
+                            handleHardDelete(client.id, client.name)
+                          }
                         >
                           {hardDeleteMutation.isPending ? (
                             <Loader2 size={16} className="animate-spin" />
@@ -731,13 +702,16 @@ export default function ClientsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur px-4 py-3 text-sm text-gray-600 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
         <div className="flex items-center gap-2">
           <span>
-            صفحة <span className="font-semibold text-gray-900">{pageNumber}</span>{" "}
-            من <span className="font-semibold text-gray-900">{totalPages}</span>
+            صفحة{" "}
+            <span className="font-semibold text-gray-900">{pageNumber}</span> من{" "}
+            <span className="font-semibold text-gray-900">{totalPages}</span>
           </span>
           <span className="text-gray-400">•</span>
           <span>
             عرض{" "}
-            <span className="font-semibold text-gray-900">{clients.length}</span>{" "}
+            <span className="font-semibold text-gray-900">
+              {clients.length}
+            </span>{" "}
             من <span className="font-semibold text-gray-900">{totalCount}</span>
           </span>
         </div>

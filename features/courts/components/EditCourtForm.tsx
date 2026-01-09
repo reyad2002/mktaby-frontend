@@ -1,20 +1,18 @@
 "use client";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Building2, MapPin, Phone, Map } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  updateCourtApi,
-  getCourtByIdApi,
-  getCourtTypesApi,
-} from "../apis/courtsApis";
+  useUpdateCourt,
+  useCourtById,
+  useCourtTypes,
+} from "../hooks/courtsHooks";
 import {
   updateCourtSchema,
   type UpdateCourtFormData,
 } from "../validations/updateCourtValidation";
+import toast from "react-hot-toast";
 
 interface EditCourtFormProps {
   courtId: number;
@@ -24,23 +22,13 @@ interface EditCourtFormProps {
 
 export default function EditCourtForm({
   courtId,
-  onSuccess,
   onCancel,
+  onSuccess,
 }: EditCourtFormProps) {
-  const queryClient = useQueryClient();
-
   // Fetch court data
-  const { data: courtData, isLoading: isLoadingCourt } = useQuery({
-    queryKey: ["court", courtId],
-    queryFn: () => getCourtByIdApi(courtId),
-    enabled: !!courtId,
-  });
-
+  const { data: courtData, isLoading: isLoadingCourt } = useCourtById(courtId);
   // Fetch court types
-  const { data: courtTypes = [] } = useQuery({
-    queryKey: ["courtTypes"],
-    queryFn: getCourtTypesApi,
-  });
+  const { data: courtTypes = [] } = useCourtTypes();
 
   const {
     register,
@@ -59,39 +47,13 @@ export default function EditCourtForm({
       : undefined,
   });
 
-  const mutation = useMutation({
-    mutationFn: (data: UpdateCourtFormData) => updateCourtApi(courtId, data),
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم تحديث المحكمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["courts"] });
-        queryClient.invalidateQueries({ queryKey: ["court", courtId] });
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر تحديث المحكمة");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Update court error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء تحديث المحكمة"
-        );
-      }
-    },
-  });
-
+  const mutation = useUpdateCourt(courtId);
   const onSubmit = (data: UpdateCourtFormData) => {
     mutation.mutate(data);
+    toast.success("تم تحديث بيانات المحكمة بنجاح");
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   if (isLoadingCourt) {

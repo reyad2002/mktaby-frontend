@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -21,6 +22,7 @@ import {
   Info,
   CheckCircle2,
   FileText,
+  Check,
 } from "lucide-react";
 
 import {
@@ -94,6 +96,150 @@ function useLockBodyScroll(locked: boolean) {
       document.body.style.overflow = original;
     };
   }, [locked]);
+}
+
+type Opt = { label: string; value: string | number };
+
+type Props = {
+  label: string;
+  value: string | number | "";
+  options: Opt[];
+  placeholder?: string;
+  onChange: (val: string | number | "") => void;
+};
+
+export function CustomSelect({
+  label,
+  value,
+  options,
+  placeholder = "الكل",
+  onChange,
+}: Props) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => String(o.value) === String(value));
+  const shownLabel =
+    value === "" ? placeholder : selected?.label ?? placeholder;
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    if (!qq) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(qq));
+  }, [q, options]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative" dir="rtl">
+      <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
+          open
+            ? "bg-white border-primary/40 ring-4 ring-primary/10"
+            : "bg-gray-50/60 border-gray-200 hover:bg-white"
+        }`}
+      >
+        <span className="text-gray-800 font-bold truncate">{shownLabel}</span>
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)] overflow-hidden">
+          {/* Search inside dropdown */}
+          <div className="p-3 border-b border-gray-100">
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none">
+                <Search size={16} />
+              </div>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ابحث..."
+                className="w-full pr-9 pl-3 py-2.5 rounded-2xl bg-gray-50/70 border border-gray-200 text-sm font-semibold text-gray-700 placeholder:text-gray-400 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+              />
+            </div>
+          </div>
+
+          {/* Options */}
+          <div className="max-h-72 overflow-auto p-2">
+            {/* All option */}
+            <OptionRow
+              active={value === ""}
+              label={placeholder}
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQ("");
+              }}
+            />
+
+            {filtered.map((o) => (
+              <OptionRow
+                key={String(o.value)}
+                active={String(value) === String(o.value)}
+                label={o.label}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQ("");
+                }}
+              />
+            ))}
+
+            {filtered.length === 0 && (
+              <div className="p-4 text-sm font-bold text-gray-500 text-center">
+                لا توجد نتائج
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OptionRow({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-gray-700 hover:bg-gray-100/70"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check size={16} className="shrink-0" />}
+    </button>
+  );
 }
 
 function ModalShell({
@@ -195,6 +341,8 @@ export default function CasesPage() {
   const [filters, setFilters] = useState<GetCasesQuery>(DEFAULT_FILTERS);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editCaseId, setEditCaseId] = useState<number | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   useLockBodyScroll(showEditModal);
 
   // Lookups using hooks
@@ -268,17 +416,6 @@ export default function CasesPage() {
     }
   };
 
-  // const {
-  //   data: clientResponse,
-  //   isLoading: isClientLoading,
-  //   isError: isClientError,
-  //   error: clientError,
-  // } = useQuery({
-  //   queryKey: ["client", clientId],
-  //   queryFn: () => getClientById(clientId!),
-  //   enabled: Number.isFinite(clientId) && clientId! > 0,
-  // });
-
   // const client = clientResponse?.data;
   return (
     <section className="space-y-6 relative ">
@@ -299,399 +436,204 @@ export default function CasesPage() {
         addButtonLabel="إضافة قضية"
       />
 
-      {/* Filters */}
-      {/* <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
-        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
-        
-          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-500" />
-
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
-              <SlidersHorizontal size={16} className="text-blue-700" />
-            </span>
-            فلاتر البحث
-            <span className="text-gray-500 font-normal">
-              • {totalCount} نتيجة
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <RefreshCw
-                size={16}
-                className={isFetching ? "animate-spin" : ""}
+      {/* Main Content Area */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+          {/* Search Input (ONLY visible filter) */}
+          <div className="lg:col-span-9">
+            <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+              بحث متقدم
+            </label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
+                <Search size={20} />
+              </div>
+              <input
+                type="text"
+                value={filters.Search ?? ""}
+                onChange={(e) => updateFilter("Search", e.target.value)}
+                placeholder="ابحث باسم القضية، الرقم، أو الموكل..."
+                className="w-full pr-12 pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all shadow-sm"
               />
-              تحديث
-            </button>
+            </div>
+          </div>
 
+          {/* Filters Dropdown Button */}
+          <div className="lg:col-span-3 relative">
             <button
               type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 bg-white"
+              onClick={() => setMoreOpen((p) => !p)}
+              className={`w-full h-[52px] flex items-center justify-between gap-3 px-5 rounded-2xl border font-extrabold transition-all ${
+                moreOpen
+                  ? "bg-white border-primary/40 ring-4 ring-primary/10"
+                  : "bg-gray-50/50 border-gray-200 hover:bg-white"
+              }`}
             >
-              إعادة ضبط
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-5">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-           
-            <div className="lg:col-span-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                بحث
-              </label>
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={filters.Search ?? ""}
-                  onChange={(e) => updateFilter("Search", e.target.value)}
-                  placeholder="ابحث باسم القضية..."
-                  className="w-full pr-9 pl-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300"
-                />
-              </div>
-            </div>
-
-         
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع القضية
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.CaseType || ""}
-                  onChange={(e) =>
-                    updateFilter(
-                      "CaseType",
-                      (e.target.value as CaseTypeValues) || undefined
-                    )
-                  }
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  <option value="">الكل</option>
-                  {caseTypes.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-        
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                حالة القضية
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.CaseStatus || ""}
-                  onChange={(e) =>
-                    updateFilter(
-                      "CaseStatus",
-                      (e.target.value as CaseStatusValues) || undefined
-                    )
-                  }
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  <option value="">الكل</option>
-                  {caseStatuses.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-         
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الترتيب
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.Sort || ""}
-                  onChange={(e) => updateFilter("Sort", e.target.value)}
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-           
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                عدد العناصر
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {[5, 10, 20, 50].map((size) => {
-                  const active = pageSize === size;
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => updateFilter("PageSize", size)}
-                      className={`px-3 py-2 text-sm rounded-xl transition-all border ${
-                        active
-                          ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
-                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-          
-            <div className="lg:col-span-12">
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex gap-2">
-                  {[
-                    { value: false, label: "نشط" },
-                    { value: true, label: "محذوف" },
-                  ].map((opt) => {
-                    const active = filters.IsDeleted === opt.value;
-                    return (
-                      <button
-                        key={String(opt.value)}
-                        type="button"
-                        onClick={() => updateFilter("IsDeleted", opt.value)}
-                        className={`rounded-xl px-4 py-2 text-sm transition-all border ${
-                          active
-                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {isError && (
-                  <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-                    <Info size={16} />
-                    حدث خطأ: {error instanceof Error ? error.message : ""}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
-      <div className="rounded-3xl bg-white/80 backdrop-blur-xl border border-gray-200/60 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] overflow-hidden transition-all">
-        {/* Header Area */}
-        <div className="px-6 py-5 border-b border-gray-100/80 flex flex-wrap items-center justify-between gap-4 relative">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-primary/40 via-primary to-primary/40" />
-
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-              <SlidersHorizontal size={22} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 leading-none">
-                فلاتر البحث
-              </h3>
-              <p className="text-sm text-gray-500 mt-1.5 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                تم العثور على{" "}
-                <span className="font-bold text-gray-700">{totalCount}</span>{" "}
-                نتيجة
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all active:scale-95"
-            >
-              <RefreshCw
+              <span className="flex items-center gap-2 text-gray-700">
+                <SlidersHorizontal size={18} className="text-primary" />
+                الفلاتر
+              </span>
+              <ChevronDown
                 size={18}
-                className={isFetching ? "animate-spin" : ""}
+                className={`transition-transform ${
+                  moreOpen ? "rotate-180" : ""
+                }`}
               />
-              تحديث
             </button>
 
-            <div className="w-px h-6 bg-gray-200 mx-1" />
+            {moreOpen && (
+              <>
+                {/* click away */}
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
 
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl text-red-500 hover:bg-red-50 transition-all active:scale-95"
-            >
-              <X size={18} />
-              إعادة ضبط
-            </button>
+                <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)]">
+                  <div className="p-5 grid grid-cols-1 gap-5">
+                    {/* Page Size */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        عدد النتائج
+                      </label>
+                      <div className="inline-flex p-1.5 bg-gray-100/80 rounded-2xl">
+                        {[5, 10, 20, 50].map((size) => {
+                          const active = pageSize === size;
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => updateFilter("PageSize", size)}
+                              className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
+                                active
+                                  ? "bg-white text-primary shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Select Filters */}
+                    {[
+                      {
+                        label: "نوع القضية",
+                        key: "CaseType" as const,
+                        options: caseTypes,
+                      },
+                      {
+                        label: "حالة القضية",
+                        key: "CaseStatus" as const,
+                        options: caseStatuses,
+                      },
+                      {
+                        label: "ترتيب حسب",
+                        key: "Sort" as const,
+                        options: SORT_OPTIONS,
+                      },
+                    ].map((select) => (
+                      <CustomSelect
+                        key={select.key}
+                        label={select.label}
+                        value={String(filters[select.key] || "")}
+                        options={select.options}
+                        placeholder="الكل"
+                        onChange={(val) =>
+                          updateFilter(
+                            select.key,
+                            val === "" ? undefined : (val as never)
+                          )
+                        }
+                      />
+                      // <div key={select.key}>
+                      //   <label className="block text-sm font-bold text-gray-700 mb-2">
+                      //     {select.label}
+                      //   </label>
+                      //   <div className="relative">
+                      //     <select
+                      //       value={String(
+                      //         filters[select.key as keyof GetCasesQuery] || ""
+                      //       )}
+                      //       onChange={(e) =>
+                      //         updateFilter(
+                      //           select.key as keyof GetCasesQuery,
+                      //           e.target.value
+                      //         )
+                      //       }
+                      //       className="w-full appearance-none pr-4 pl-10 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 font-medium focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
+                      //     >
+                      //       <option value="">الكل</option>
+                      //       {select.options.map((o) => (
+                      //         <option key={o.value} value={o.value}>
+                      //           {o.label}
+                      //         </option>
+                      //       ))}
+                      //     </select>
+                      //     <ChevronDown
+                      //       size={18}
+                      //       className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      //     />
+                      //   </div>
+                      // </div>
+                    ))}
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-red-500 bg-red-50 hover:bg-red-100"
+                      >
+                        إعادة ضبط
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      >
+                        تم
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Main Content Area */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Search Input - Taking more space */}
-            <div className="lg:col-span-5">
-              <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
-                بحث متقدم
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
-                  <Search size={20} />
-                </div>
-                <input
-                  type="text"
-                  value={filters.Search ?? ""}
-                  onChange={(e) => updateFilter("Search", e.target.value)}
-                  placeholder="ابحث باسم القضية، الرقم، أو الموكل..."
-                  className="w-full pr-12 pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all shadow-sm"
-                />
-              </div>
-            </div>
-
-            {/* Select Wrappers - Custom Styled */}
+        {/* Status */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            حالة السجلات
+          </label>
+          <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
             {[
-              {
-                label: "نوع القضية",
-                key: "CaseType" as const,
-                options: caseTypes,
-              },
-              {
-                label: "حالة القضية",
-                key: "CaseStatus" as const,
-                options: caseStatuses,
-              },
-              {
-                label: "ترتيب حسب",
-                key: "Sort" as const,
-                options: SORT_OPTIONS,
-              },
-            ].map((select, idx) => (
-              <div key={idx} className="lg:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
-                  {select.label}
-                </label>
-                <div className="relative group">
-                  <select
-                    value={String(
-                      filters[select.key as keyof GetCasesQuery] || ""
-                    )}
-                    onChange={(e) =>
-                      updateFilter(
-                        select.key as keyof GetCasesQuery,
-                        e.target.value
-                      )
-                    }
-                    className="w-full appearance-none pr-4 pl-10 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 font-medium focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer"
-                  >
-                    <option value="">الكل</option>
-                    {select.options.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:rotate-180 transition-transform pointer-events-none"
-                  />
-                </div>
-              </div>
-            ))}
-
-            {/* Page Size Segmented Control */}
-            <div className="lg:col-span-4 flex flex-col justify-end">
-              <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
-                عدد النتائج
-              </label>
-              <div className="inline-flex p-1.5 bg-gray-100/80 rounded-2xl w-fit">
-                {[5, 10, 20, 50].map((size) => {
-                  const active = pageSize === size;
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => updateFilter("PageSize", size)}
-                      className={`px-5 py-2 text-sm font-bold rounded-xl transition-all ${
-                        active
-                          ? "bg-white text-primary shadow-sm"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Status Toggles & Error Display */}
-            <div className="lg:col-span-8 flex flex-wrap items-center justify-between gap-4 mt-2">
-              <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
-                {[
-                  { value: false, label: "السجلات النشطة", icon: CheckCircle2 },
-                  { value: true, label: "المؤرشفة", icon: Archive },
-                ].map((opt) => {
-                  const active = filters.IsDeleted === opt.value;
-                  const Icon = opt.icon;
-                  return (
-                    <button
-                      key={String(opt.value)}
-                      type="button"
-                      onClick={() => updateFilter("IsDeleted", opt.value)}
-                      className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all ${
-                        active
-                          ? opt.value
-                            ? "bg-red-500 text-white shadow-lg shadow-red-200"
-                            : "bg-primary text-white shadow-lg shadow-primary/30"
-                          : "text-gray-500 hover:bg-gray-200/50"
-                      }`}
-                    >
-                      <Icon size={16} />
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {isError && (
-                <div className="flex items-center gap-3 text-sm font-bold text-red-600 bg-red-50 border border-red-100 px-5 py-3 rounded-2xl animate-bounce-subtle">
-                  <Info size={18} />
-                  <span>
-                    حدث خطأ في جلب البيانات:{" "}
-                    {error instanceof Error ? error.message : "خطأ غير معروف"}
-                  </span>
-                </div>
-              )}
-            </div>
+              { value: false, label: "النشطة", icon: CheckCircle2 },
+              { value: true, label: "المؤرشفة", icon: Archive },
+            ].map((opt) => {
+              const active = filters.IsDeleted === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => updateFilter("IsDeleted", opt.value)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                    active
+                      ? opt.value
+                        ? "bg-red-500 text-white"
+                        : "bg-primary text-white"
+                      : "text-gray-500 hover:bg-gray-200/50"
+                  }`}
+                >
+                  <Icon size={16} />
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

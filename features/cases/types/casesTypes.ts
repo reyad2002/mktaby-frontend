@@ -117,6 +117,8 @@ export type GetCasesQuery = {
   ClientId?: number;
   CourtId?: number;
 
+  IsArchived?: boolean;
+
   OpenedFrom?: string; // date-time string
   OpenedTo?: string; // date-time string
   ClosedFrom?: string; // date-time string
@@ -248,6 +250,12 @@ export type HardDeleteCaseResponse = ApiResponse<boolean>;
 
 // POST /Case/restore/{id}
 export type RestoreCaseResponse = ApiResponse<boolean>;
+
+// PATCH /Case/{id}/archive
+export type ArchiveCaseResponse = ApiResponse<boolean>;
+
+// PATCH /Case/{id}/unarchive
+export type UnarchiveCaseResponse = ApiResponse<boolean>;
 
 // ===========================
 // GET /Case/dropdown types

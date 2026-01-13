@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Briefcase, ArrowRight } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import AddCaseForm from "@/features/cases/components/AddCaseForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 
@@ -26,22 +26,13 @@ export default function AddCasePage() {
       </div>
 
       {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handleCancel}
-          className="inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-          title="رجوع"
-        >
-          <ArrowRight size={20} />
-        </button>
-        <div className="flex-1">
-          <PageHeader
-            title="إضافة قضية جديدة"
-            subtitle="أدخل بيانات القضية الجديدة."
-            icon={Briefcase}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="إضافة قضية جديدة"
+        subtitle="أدخل بيانات القضية الجديدة."
+        icon={Briefcase}
+        showBackButton
+        backFallbackUrl="/dashboard/cases"
+      />
 
       {/* Form Card */}
       <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">

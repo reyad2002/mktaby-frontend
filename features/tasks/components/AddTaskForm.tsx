@@ -2,13 +2,11 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, CheckCircle } from "lucide-react";
-import toast from "react-hot-toast";
 
-import { addTaskApi } from "../apis/tasksApis";
-import { fetchUsers } from "@/features/users/apis/usersApi";
-import { getCases } from "@/features/cases/apis/casesApis";
+import { useAddTask } from "../hooks/tasksHooks";
+import { useUsers } from "@/features/users/hooks/usersHooks";
+import { useCases } from "@/features/cases/hooks/caseHooks";
 import {
   addTaskSchema,
   type AddTaskFormData,
@@ -49,20 +47,15 @@ const ENTITY_TYPE_OPTIONS: { value: EntityType; label: string }[] = [
 ];
 
 export default function AddTaskForm({ onSuccess, onCancel }: AddTaskFormProps) {
-  const queryClient = useQueryClient();
+  // Add task mutation using hook
+  const mutation = useAddTask();
 
-  // Fetch users for dropdown
-  const { data: usersData } = useQuery({
-    queryKey: ["users", { pageSize: 100 }],
-    queryFn: () => fetchUsers({ pageSize: 100 }),
-  });
+  // Fetch users for dropdown using hook
+  const { data: usersData } = useUsers({ pageSize: 100 });
   const users = usersData?.data?.data ?? [];
 
-  // Fetch cases for entity linking
-  const { data: casesData } = useQuery({
-    queryKey: ["cases", { PageSize: 100 }],
-    queryFn: () => getCases({ PageSize: 100 }),
-  });
+  // Fetch cases for entity linking using hook
+  const { data: casesData } = useCases({ PageSize: 100 });
   const cases = casesData?.data?.data ?? [];
 
   const {
@@ -91,37 +84,6 @@ export default function AddTaskForm({ onSuccess, onCancel }: AddTaskFormProps) {
   const selectedUsers = watch("users");
   const entityType = watch("entityType");
 
-  const mutation = useMutation({
-    mutationFn: (data: CreateTaskRequest) => addTaskApi(data),
-    onSuccess: (response) => {
-      if (response?.data?.succeeded) {
-        toast.success(response.data.message || "تم إضافة المهمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        reset();
-        onSuccess?.();
-      } else {
-        toast.error(response?.data?.message || "تعذر إضافة المهمة");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add task error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة المهمة"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: AddTaskFormData) => {
     const payload: CreateTaskRequest = {
       title: data.title,
@@ -134,7 +96,14 @@ export default function AddTaskForm({ onSuccess, onCancel }: AddTaskFormProps) {
       recurringEvery: data.recurringEvery,
       users: data.users,
     };
-    mutation.mutate(payload);
+    mutation.mutate(payload, {
+      onSuccess: (response) => {
+        if (response?.data?.succeeded) {
+          reset();
+          onSuccess?.();
+        }
+      },
+    });
   };
 
   const toggleUser = (userId: number) => {

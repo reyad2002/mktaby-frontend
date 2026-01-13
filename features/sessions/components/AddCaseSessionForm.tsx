@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
   Calendar,
@@ -11,14 +10,13 @@ import {
   FileText,
   StickyNote,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  createSession,
-  fetchSessionTypes,
-  fetchSessionStatuses,
-} from "../apis/sessionsApis";
-import { getCourtDropdownApi } from "@/features/courts/apis/courtsApis";
+  useCreateSession,
+  useSessionTypes,
+  useSessionStatuses,
+} from "../hooks/sessionsHooks";
+import { useCourtDropdown } from "@/features/courts/hooks/courtsHooks";
 import {
   addSessionSchema,
   type AddSessionFormData,
@@ -41,22 +39,11 @@ export default function AddCaseSessionForm({
   onSuccess,
   onCancel,
 }: AddCaseSessionFormProps) {
-  const queryClient = useQueryClient();
+  const { data: sessionTypes = [] } = useSessionTypes();
 
-  const { data: sessionTypes = [] } = useQuery({
-    queryKey: ["sessionTypes"],
-    queryFn: fetchSessionTypes,
-  });
+  const { data: sessionStatuses = [] } = useSessionStatuses();
 
-  const { data: sessionStatuses = [] } = useQuery({
-    queryKey: ["sessionStatuses"],
-    queryFn: fetchSessionStatuses,
-  });
-
-  const { data: courtsData } = useQuery({
-    queryKey: ["courtsDropdown"],
-    queryFn: () => getCourtDropdownApi({ PageSize: 100 }),
-  });
+  const { data: courtsData } = useCourtDropdown({ PageSize: 100 });
   const courts = courtsData?.data ?? [];
 
   const {
@@ -77,31 +64,7 @@ export default function AddCaseSessionForm({
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: createSession,
-    onSuccess: () => {
-      toast.success("تم إضافة الجلسة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["caseSessions", caseId] });
-      reset();
-      onSuccess?.();
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة الجلسة"
-        );
-      }
-    },
-  });
+  const mutation = useCreateSession();
 
   const onSubmit = (data: AddSessionFormData) => {
     const payload = {
@@ -113,7 +76,12 @@ export default function AddCaseSessionForm({
       notes: data.notes || "",
       result: data.result || "",
     };
-    mutation.mutate(payload);
+    mutation.mutate(payload, {
+      onSuccess: () => {
+        reset();
+        onSuccess?.();
+      },
+    });
   };
 
   return (

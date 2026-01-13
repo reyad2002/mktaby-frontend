@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Shield,
   ShieldPlus,
@@ -12,13 +11,12 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  fetchPermissions,
-  getPermissionById,
-  deletePermission,
-} from "@/features/permissions/apis/permissionsApi";
+  usePermissions,
+  usePermissionById,
+  useDeletePermission,
+} from "@/features/permissions/hooks/permissionsHooks";
 import AddPermissionForm from "@/features/permissions/components/AddPermissionForm";
 import EditPermissionForm from "@/features/permissions/components/EditPermissionForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
@@ -88,30 +86,8 @@ export default function PermissionsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editPermissionId, setEditPermissionId] = useState<number | null>(null);
 
-  const queryClient = useQueryClient();
-
-  const deleteMutation = useMutation({
-    mutationFn: deletePermission,
-    onSuccess: (response) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((response as any)?.succeeded) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toast.success((response as any)?.message || "تم حذف الصلاحية بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["permissions"] });
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toast.error((response as any)?.message || "تعذر حذف الصلاحية");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء حذف الصلاحية");
-    },
-  });
+  // Delete permission using hook
+  const deleteMutation = useDeletePermission();
 
   const handleDelete = (id: number, name: string) => {
     if (window.confirm(`هل أنت متأكد من حذف الصلاحية "${name}"؟`)) {
@@ -128,10 +104,9 @@ export default function PermissionsPage() {
     } satisfies PermissionsQueryParams;
   }, [filters]);
 
-  const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ["permissions", queryParams],
-    queryFn: () => fetchPermissions(queryParams),
-  });
+  // Fetch permissions list using hook
+  const { data, isLoading, isError, error, isFetching } =
+    usePermissions(queryParams);
 
   const permissions: PermissionSummary[] = data?.data?.data ?? [];
   const totalCount = data?.data?.count ?? 0;
@@ -158,13 +133,9 @@ export default function PermissionsPage() {
 
   const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
-  // View details
+  // Fetch permission by ID using hook
   const { data: permissionResponseByID, isLoading: isLoadingPermission } =
-    useQuery({
-      queryKey: ["permission", viewPermissionId],
-      queryFn: () => getPermissionById(viewPermissionId as number),
-      enabled: !!viewPermissionId,
-    });
+    usePermissionById(viewPermissionId ?? 0, !!viewPermissionId);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const permissionDetails = permissionResponseByID as any;

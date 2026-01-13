@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState, useCallback, memo } from "react";
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Scale,
@@ -21,10 +22,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
-  Eye,
+  CheckCircle2,
+  FileText,
+  Check,
 } from "lucide-react";
-import toast from "react-hot-toast";
-
 
 import {
   useCourtsResources,
@@ -36,10 +37,7 @@ import AddCourtForm from "@/features/courts/components/AddCourtForm";
 import EditCourtForm from "@/features/courts/components/EditCourtForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import ConfirmDialog from "@/shared/components/ui/ConfirmDialog";
-import type {
-  Params,
-  CourtsResource,
-} from "@/features/courts/types/courtsTypes";
+import type { Params, CourtsResource } from "@/features/courts/types/courtsTypes";
 
 const DEFAULT_FILTERS: Params = {
   pageNumber: 1,
@@ -57,6 +55,10 @@ const SORT_OPTIONS = [
   { value: "name desc", label: "الاسم (ي-أ)" },
 ];
 
+const formatDateAr = (date?: string | null) =>
+  date ? new Date(date).toLocaleDateString("ar-EG") : "—";
+
+// to prevent background scroll when modal is open
 function useLockBodyScroll(locked: boolean) {
   useEffect(() => {
     if (!locked) return;
@@ -66,6 +68,150 @@ function useLockBodyScroll(locked: boolean) {
       document.body.style.overflow = original;
     };
   }, [locked]);
+}
+
+type Opt = { label: string; value: string | number };
+
+type CustomSelectProps = {
+  label: string;
+  value: string | number | "";
+  options: Opt[];
+  placeholder?: string;
+  onChange: (val: string | number | "") => void;
+};
+
+function CustomSelect({
+  label,
+  value,
+  options,
+  placeholder = "الكل",
+  onChange,
+}: CustomSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => String(o.value) === String(value));
+  const shownLabel =
+    value === "" ? placeholder : selected?.label ?? placeholder;
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    if (!qq) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(qq));
+  }, [q, options]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative" dir="rtl">
+      <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
+          open
+            ? "bg-white border-primary/40 ring-4 ring-primary/10"
+            : "bg-gray-50/60 border-gray-200 hover:bg-white"
+        }`}
+      >
+        <span className="text-gray-800 font-bold truncate">{shownLabel}</span>
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)] overflow-hidden">
+          {/* Search inside dropdown */}
+          <div className="p-3 border-b border-gray-100">
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none">
+                <Search size={16} />
+              </div>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ابحث..."
+                className="w-full pr-9 pl-3 py-2.5 rounded-2xl bg-gray-50/70 border border-gray-200 text-sm font-semibold text-gray-700 placeholder:text-gray-400 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+              />
+            </div>
+          </div>
+
+          {/* Options */}
+          <div className="max-h-72 overflow-auto p-2">
+            {/* All option */}
+            <OptionRow
+              active={value === ""}
+              label={placeholder}
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQ("");
+              }}
+            />
+
+            {filtered.map((o) => (
+              <OptionRow
+                key={String(o.value)}
+                active={String(value) === String(o.value)}
+                label={o.label}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQ("");
+                }}
+              />
+            ))}
+
+            {filtered.length === 0 && (
+              <div className="p-4 text-sm font-bold text-gray-500 text-center">
+                لا توجد نتائج
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OptionRow({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-gray-700 hover:bg-gray-100/70"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check size={16} className="shrink-0" />}
+    </button>
+  );
 }
 
 function ModalShell({
@@ -91,7 +237,7 @@ function ModalShell({
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
             {Icon ? (
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                 <Icon size={18} className={iconClassName} />
               </span>
             ) : null}
@@ -171,6 +317,25 @@ function IconButton({
   );
 }
 
+function Pill({
+  icon: Icon,
+  text,
+  className = "",
+}: {
+  icon?: LucideIcon;
+  text: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border ${className}`}
+    >
+      {Icon ? <Icon size={12} /> : null}
+      {text}
+    </span>
+  );
+}
+
 function LoadingState() {
   return (
     <div className="flex items-center justify-center min-h-[55vh]">
@@ -206,27 +371,10 @@ function EmptyState() {
   );
 }
 
-function Pill({
-  icon: Icon,
-  text,
-  className = "",
-}: {
-  icon?: LucideIcon;
-  text: string;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border ${className}`}
-    >
-      {Icon ? <Icon size={12} /> : null}
-      {text}
-    </span>
-  );
-}
-
 export default function CourtsPage() {
   const [filters, setFilters] = useState<Params>(DEFAULT_FILTERS);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const [showAddCourtModal, setShowAddCourtModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editCourtId, setEditCourtId] = useState<number | null>(null);
@@ -240,11 +388,10 @@ export default function CourtsPage() {
 
   useLockBodyScroll(showAddCourtModal || showEditModal);
 
-
   const softDeleteMutation = useSoftDeleteCourt();
-
   const hardDeleteMutation = useHardDeleteCourt();
   const restoreMutation = useRestoreCourt();
+
   const handleSoftDelete = useCallback((id: number, name: string) => {
     setDeleteDialog({ open: true, type: "soft", court: { id, name } });
   }, []);
@@ -292,6 +439,7 @@ export default function CourtsPage() {
 
   const { data, isLoading, isError, error, isFetching, refetch } =
     useCourtsResources(queryParams);
+
   const courts: CourtsResource[] = data?.data?.data ?? [];
   const totalCount = data?.data?.count ?? 0;
 
@@ -307,12 +455,12 @@ export default function CourtsPage() {
     }));
   };
 
+  const resetFilters = () => setFilters(DEFAULT_FILTERS);
+
   const handlePageChange = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages) return;
     setFilters((prev) => ({ ...prev, pageNumber: nextPage }));
   };
-
-  const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
   return (
     <section className="space-y-6 relative">
@@ -327,160 +475,201 @@ export default function CourtsPage() {
         title="المحاكم"
         subtitle="إدارة بيانات المحاكم ومعلومات الاتصال الخاصة بها."
         icon={Scale}
+        isFetching={isFetching}
         countLabel={`${totalCount} محكمة`}
         onAdd={() => setShowAddCourtModal(true)}
         addButtonLabel="إضافة محكمة"
-        isFetching={isFetching}
       />
 
-      {/* Filters (Cases UI) */}
-      <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
-        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
-          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-500" />
-
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
-              <SlidersHorizontal size={16} className="text-blue-700" />
-            </span>
-            فلاتر البحث
-            <span className="text-gray-500 font-normal">
-              • {totalCount} نتيجة
-            </span>
+      {/* Main Content Area (Cases layout) */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+          {/* Search Input (ONLY visible filter) */}
+          <div className="lg:col-span-9">
+            <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+              بحث متقدم
+            </label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
+                <Search size={20} />
+              </div>
+              <input
+                type="text"
+                value={filters.search ?? ""}
+                onChange={(e) => updateFilter("search", e.target.value)}
+                placeholder="ابحث باسم المحكمة، المدينة، أو العنوان..."
+                className="w-full pr-12 pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all shadow-sm"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Filters Dropdown Button */}
+          <div className="lg:col-span-3 relative">
             <button
               type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={() => setMoreOpen((p) => !p)}
+              className={`w-full h-13 flex items-center justify-between gap-3 px-5 rounded-2xl border font-extrabold transition-all ${
+                moreOpen
+                  ? "bg-white border-primary/40 ring-4 ring-primary/10"
+                  : "bg-gray-50/50 border-gray-200 hover:bg-white"
+              }`}
             >
-              <RefreshCw
-                size={16}
-                className={isFetching ? "animate-spin" : ""}
+              <span className="flex items-center gap-2 text-gray-700">
+                <SlidersHorizontal size={18} className="text-primary" />
+                الفلاتر
+              </span>
+              <ChevronDown
+                size={18}
+                className={`transition-transform ${moreOpen ? "rotate-180" : ""}`}
               />
-              تحديث
             </button>
 
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 bg-white"
-            >
-              إعادة ضبط
-            </button>
+            {moreOpen && (
+              <>
+                {/* click away */}
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
+
+                <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)]">
+                  <div className="p-5 grid grid-cols-1 gap-5">
+                    {/* Page Size */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        عدد النتائج
+                      </label>
+                      <div className="inline-flex p-1.5 bg-gray-100/80 rounded-2xl">
+                        {[5, 10, 20, 50].map((size) => {
+                          const active = pageSize === size;
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => updateFilter("pageSize", size)}
+                              className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
+                                active
+                                  ? "bg-white text-primary shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Sort */}
+                    <CustomSelect
+                      label="ترتيب حسب"
+                      value={String(filters.sort || "")}
+                      options={SORT_OPTIONS}
+                      placeholder="بدون ترتيب"
+                      onChange={(val) =>
+                        updateFilter("sort", val === "" ? "" : String(val))
+                      }
+                    />
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-red-500 bg-red-50 hover:bg-red-100"
+                      >
+                        إعادة ضبط
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      >
+                        تم
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => refetch()}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                    >
+                      <RefreshCw
+                        size={16}
+                        className={isFetching ? "animate-spin" : ""}
+                      />
+                      تحديث النتائج
+                    </button>
+
+                    {isError && (
+                      <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-2xl font-bold">
+                        <Info size={16} />
+                        حدث خطأ: {error instanceof Error ? error.message : "—"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="p-4 sm:p-5">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            {/* Search */}
-            <div className="lg:col-span-5">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                بحث
-              </label>
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={filters.search ?? ""}
-                  onChange={(e) => updateFilter("search", e.target.value)}
-                  placeholder="ابحث باسم المحكمة..."
-                  className="w-full pr-9 pl-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300"
-                />
-              </div>
-            </div>
+        {/* Status */}
+        <div className="mt-6">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            حالة السجلات
+          </label>
+          <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
+            {[
+              {
+                key: "active",
+                label: "النشطة",
+                icon: CheckCircle2,
+                color: "bg-primary",
+              },
+              {
+                key: "deleted",
+                label: "المحذوفة",
+                icon: Trash2,
+                color: "bg-red-500",
+              },
+            ].map((opt) => {
+              const isActive = opt.key === "active" && !filters.isDeleted;
+              const isDeleted = opt.key === "deleted" && !!filters.isDeleted;
+              const active = isActive || isDeleted;
+              const Icon = opt.icon;
 
-            {/* Sort */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الترتيب
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.sort || ""}
-                  onChange={(e) => updateFilter("sort", e.target.value)}
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => {
+                    if (opt.key === "active") {
+                      setFilters((prev) => ({
+                        ...prev,
+                        isDeleted: false,
+                        pageNumber: 1,
+                      }));
+                    } else {
+                      setFilters((prev) => ({
+                        ...prev,
+                        isDeleted: true,
+                        pageNumber: 1,
+                      }));
+                    }
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                    active
+                      ? `${opt.color} text-white`
+                      : "text-gray-500 hover:bg-gray-200/50"
+                  }`}
                 >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Page size */}
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                عدد العناصر
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {[5, 10, 20, 50].map((size) => {
-                  const active = pageSize === size;
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => updateFilter("pageSize", size)}
-                      className={`px-3 py-2 text-sm rounded-xl transition-all border ${
-                        active
-                          ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
-                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الحالة
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: false, label: "نشط" },
-                  { value: true, label: "محذوف" },
-                ].map((opt) => {
-                  const active = filters.isDeleted === opt.value;
-                  return (
-                    <button
-                      key={String(opt.value)}
-                      type="button"
-                      onClick={() => updateFilter("isDeleted", opt.value)}
-                      className={`rounded-xl px-3 py-2 text-sm transition-all border ${
-                        active
-                          ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Error */}
-            <div className="lg:col-span-12">
-              {isError && (
-                <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-                  <Info size={16} />
-                  حدث خطأ: {error instanceof Error ? error.message : ""}
-                </div>
-              )}
-            </div>
+                  <Icon size={16} />
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -495,94 +684,105 @@ export default function CourtsPage() {
       ) : courts.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-linear-to-b from-gray-50 to-white sticky top-0 z-10">
-                <tr className="text-right text-xs font-semibold text-gray-700">
-                  <th className="px-4 py-3 whitespace-nowrap">ID</th>
-                  <th className="px-4 py-3">اسم المحكمة</th>
-                  <th className="px-4 py-3 whitespace-nowrap">النوع</th>
-                  <th className="px-4 py-3 whitespace-nowrap">المدينة</th>
-                  <th className="px-4 py-3">العنوان</th>
-                  <th className="px-4 py-3 whitespace-nowrap">الهاتف</th>
-                  <th className="px-4 py-3 whitespace-nowrap">الإجراءات</th>
+        <div className="overflow-hidden rounded-3xl border border-gray-200/60 bg-white/80 backdrop-blur-xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] ring-1 ring-gray-200/50">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
+            <table className="min-w-full border-separate border-spacing-0">
+              <thead className="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-md">
+                <tr className="text-right text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    رقم
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100">
+                    تفاصيل المحكمة
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    النوع
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    المدينة
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    الهاتف
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap text-center">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {courts.map((court, index) => (
+              <tbody className="divide-y divide-gray-50 bg-transparent">
+                {courts.map((court) => (
                   <tr
                     key={court.id}
-                    className={`text-sm text-gray-800 transition-colors ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-                    } hover:bg-linear-to-r hover:from-blue-50/60 hover:to-transparent`}
+                    className="group transition-all duration-200 hover:bg-primary/2"
                   >
-                    <td className="px-4 py-4 text-gray-500 whitespace-nowrap">
-                      {court.id}
+                    {/* ID */}
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className="font-mono text-sm font-bold text-primary bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 group-hover:bg-primary/10 transition-colors">
+                        {court.id}
+                      </span>
                     </td>
 
-                    <td className="px-4 py-4 min-w-65">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+                    {/* Name + Address */}
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3 max-w-95">
+                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                           <Building2 size={18} className="text-blue-700" />
                         </span>
+
                         <div className="min-w-0">
                           <div
-                            className="font-semibold text-gray-900 truncate max-w-90"
+                            className="font-bold text-gray-900 leading-tight truncate max-w-[520px]"
                             title={court.name}
                           >
                             {court.name}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            ID: {court.id}
+
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                            <span className="inline-flex items-center gap-1.5">
+                              <MapPin size={14} className="text-gray-400" />
+                              <span className="font-semibold text-gray-600">
+                                {court.city || "—"}
+                              </span>
+                            </span>
+
+                            <span className="inline-flex items-center gap-1.5 max-w-[420px]">
+                              <span className="text-gray-400">•</span>
+                              <span
+                                className="truncate"
+                                title={court.address || ""}
+                              >
+                                {court.address || "—"}
+                              </span>
+                            </span>
                           </div>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <Pill
-                        icon={Scale}
-                        text={court.type?.label || "—"}
-                        className="bg-blue-50 text-blue-700 border-blue-200"
-                      />
-                    </td>
-
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-2">
-                        <MapPin size={14} className="text-gray-400" />
-                        <span className="text-gray-700">
-                          {court.city || "—"}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4 max-w-90">
-                      <span
-                        className="text-gray-700 wrap-break-word"
-                        title={court.address}
-                      >
-                        {court.address || "—"}
+                    {/* Type */}
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100/50 uppercase">
+                        {court.type?.label || "—"}
                       </span>
                     </td>
 
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-2">
-                        <Phone size={14} className="text-gray-400" />
-                        <span className="text-gray-700" dir="ltr">
-                          {court.phoneNumber || "—"}
-                        </span>
-                      </div>
+                    {/* City (separate column for sorting/scan) */}
+                    <td className="px-6 py-5 text-sm font-medium text-gray-600 whitespace-nowrap">
+                      {court.city || "—"}
                     </td>
 
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        {/* <button className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors">
-                          <Eye size={14} />
-                          
-                        </button> */}
+                    {/* Phone */}
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-600">
+                        <Phone size={14} className="text-gray-400" />
+                        <span dir="ltr">{court.phoneNumber || "—"}</span>
+                      </span>
+                    </td>
 
+                    {/* Actions */}
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-center gap-2">
                         <IconButton
                           title="تعديل"
                           variant="purple"
@@ -591,7 +791,7 @@ export default function CourtsPage() {
                             setShowEditModal(true);
                           }}
                         >
-                          <Edit size={16} />
+                          <Edit size={16} strokeWidth={2.5} />
                         </IconButton>
 
                         {filters.isDeleted ? (
@@ -600,14 +800,12 @@ export default function CourtsPage() {
                               title="استعادة"
                               variant="green"
                               disabled={restoreMutation.isPending}
-                              onClick={() =>
-                                handleRestore(court.id, court.name)
-                              }
+                              onClick={() => handleRestore(court.id, court.name)}
                             >
                               {restoreMutation.isPending ? (
                                 <Loader2 size={16} className="animate-spin" />
                               ) : (
-                                <RotateCcw size={16} />
+                                <RotateCcw size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
 
@@ -622,7 +820,7 @@ export default function CourtsPage() {
                               {hardDeleteMutation.isPending ? (
                                 <Loader2 size={16} className="animate-spin" />
                               ) : (
-                                <Trash2 size={16} />
+                                <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
                           </>
@@ -631,14 +829,12 @@ export default function CourtsPage() {
                             title="أرشفة"
                             variant="orange"
                             disabled={softDeleteMutation.isPending}
-                            onClick={() =>
-                              handleSoftDelete(court.id, court.name)
-                            }
+                            onClick={() => handleSoftDelete(court.id, court.name)}
                           >
                             {softDeleteMutation.isPending ? (
                               <Loader2 size={16} className="animate-spin" />
                             ) : (
-                              <Archive size={16} />
+                              <Archive size={16} strokeWidth={2.5} />
                             )}
                           </IconButton>
                         )}
@@ -652,51 +848,65 @@ export default function CourtsPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur px-4 py-3 text-sm text-gray-600 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
-        <div className="flex items-center gap-2">
-          <span>
-            صفحة{" "}
-            <span className="font-semibold text-gray-900">{pageNumber}</span> من{" "}
-            <span className="font-semibold text-gray-900">{totalPages}</span>
-          </span>
-          <span className="text-gray-400">•</span>
-          <span>
-            عرض{" "}
-            <span className="font-semibold text-gray-900">{courts.length}</span>{" "}
-            من <span className="font-semibold text-gray-900">{totalCount}</span>
-          </span>
+      {/* Pagination (Cases UI) */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-5 rounded-3xl border border-gray-200/60 bg-white/80 backdrop-blur-xl px-6 py-4 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] ring-1 ring-gray-200/50 mt-6">
+        {/* Stats */}
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary shadow-inner">
+            <FileText size={18} />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <div className="text-sm font-medium text-gray-500">
+              صفحة <span className="font-bold text-gray-900">{pageNumber}</span>{" "}
+              من <span className="font-bold text-gray-900">{totalPages}</span>
+            </div>
+            <span className="hidden sm:block h-4 w-px bg-gray-200" />
+            <div className="text-sm font-medium text-gray-500">
+              عرض <span className="text-primary font-bold">{courts.length}</span>{" "}
+              من أصل <span className="font-bold text-gray-900">{totalCount}</span>{" "}
+              سجل
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Controls */}
+        <div className="flex items-center gap-3">
           <button
             onClick={() => handlePageChange(pageNumber - 1)}
             disabled={pageNumber <= 1}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-600 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-30 disabled:pointer-events-none active:scale-95 shadow-sm"
           >
-            <ChevronRight size={16} />
+            <ChevronRight
+              size={18}
+              className="transition-transform group-hover:translate-x-1"
+            />
             السابق
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">اذهب إلى</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+              اذهب لـ
+            </span>
             <input
               type="number"
               min={1}
               max={totalPages}
               value={pageNumber}
               onChange={(e) => handlePageChange(Number(e.target.value))}
-              className="w-20 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+              className="w-12 bg-transparent text-center text-sm font-extrabold text-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
           <button
             onClick={() => handlePageChange(pageNumber + 1)}
             disabled={pageNumber >= totalPages}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-600 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-30 disabled:pointer-events-none active:scale-95 shadow-sm"
           >
             التالي
-            <ChevronLeft size={16} />
+            <ChevronLeft
+              size={18}
+              className="transition-transform group-hover:-translate-x-1"
+            />
           </button>
         </div>
       </div>

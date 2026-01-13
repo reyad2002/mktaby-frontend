@@ -21,6 +21,7 @@ import {
   User,
   Building,
   Gavel,
+  FolderOpen,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUserPermissions } from "@/features/permissions/permissionsSlice";
@@ -106,6 +107,12 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       label: "التقويم",
       href: "/dashboard/calendar",
       icon: <CalendarDays size={20} />,
+    },
+    {
+      label: "إدارة الملفات",
+      href: "/dashboard/files",
+      icon: <FolderOpen size={20} />,
+      permissionKey: "documentPermissions",
     },
     {
       label: "إدارة الماليات",

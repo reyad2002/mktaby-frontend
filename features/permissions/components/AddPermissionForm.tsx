@@ -2,11 +2,9 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Shield } from "lucide-react";
-import toast from "react-hot-toast";
 
-import { addPermission } from "../apis/permissionsApi";
+import { useAddPermission } from "../hooks/permissionsHooks";
 import {
   addPermissionSchema,
   type AddPermissionFormData,
@@ -33,7 +31,8 @@ export default function AddPermissionForm({
   onSuccess,
   onCancel,
 }: AddPermissionFormProps) {
-  const queryClient = useQueryClient();
+  // Use the hook for adding permission
+  const mutation = useAddPermission();
 
   const {
     register,
@@ -55,39 +54,15 @@ export default function AddPermissionForm({
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: addPermission,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم إضافة الصلاحية بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["permissions"] });
-        reset();
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر إضافة الصلاحية");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add permission error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة الصلاحية"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: AddPermissionFormData) => {
-    mutation.mutate(data);
+    mutation.mutate(data, {
+      onSuccess: (response) => {
+        if (response?.succeeded) {
+          reset();
+          onSuccess?.();
+        }
+      },
+    });
   };
 
   return (

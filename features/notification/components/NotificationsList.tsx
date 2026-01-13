@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Check,
@@ -12,9 +11,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
-  getNotifications,
-  updateNotificationById,
-} from "../apis/notificationApi";
+  useNotifications,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+} from "../hooks/notificationHooks";
 import type {
   NotificationDto,
   GetNotificationsQuery,
@@ -30,7 +30,6 @@ const DEFAULT_FILTERS: GetNotificationsQuery = {
 };
 
 const NotificationsList: React.FC = () => {
-  const queryClient = useQueryClient();
   const [filters, setFilters] =
     useState<GetNotificationsQuery>(DEFAULT_FILTERS);
   const [searchInput, setSearchInput] = useState("");
@@ -38,41 +37,19 @@ const NotificationsList: React.FC = () => {
     "all"
   );
 
-  // Fetch notifications
+  // Fetch notifications using hook
   const {
     data: notificationsResponse,
     isLoading,
     isFetching,
     refetch,
-  } = useQuery({
-    queryKey: ["notifications", filters],
-    queryFn: () => getNotifications(filters),
-  });
+  } = useNotifications(filters);
 
-  // Mark as read mutation
-  const markAsReadMutation = useMutation({
-    mutationFn: (id: number) => updateNotificationById(id, { isRead: true }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
-    },
-  });
+  // Mark as read mutation using hook
+  const markAsReadMutation = useMarkNotificationAsRead();
 
-  // Mark all as read
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const unreadNotifications = notifications.filter((n) => !n.isRead);
-      await Promise.all(
-        unreadNotifications.map((n) =>
-          updateNotificationById(n.id, { isRead: true })
-        )
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
-    },
-  });
+  // Mark all as read using hook
+  const markAllAsReadMutation = useMarkAllNotificationsAsRead();
 
   // Handle search
   useEffect(() => {
@@ -196,7 +173,12 @@ const NotificationsList: React.FC = () => {
           {/* Mark All as Read */}
           {unreadCount > 0 && (
             <button
-              onClick={() => markAllAsReadMutation.mutate()}
+              onClick={() => {
+                const unreadNotifications = notifications.filter(
+                  (n) => !n.isRead
+                );
+                markAllAsReadMutation.mutate(unreadNotifications);
+              }}
               disabled={markAllAsReadMutation.isPending}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
@@ -235,7 +217,12 @@ const NotificationsList: React.FC = () => {
               <NotificationItem
                 key={notification.id}
                 notification={notification}
-                onMarkAsRead={() => markAsReadMutation.mutate(notification.id)}
+                onMarkAsRead={() =>
+                  markAsReadMutation.mutate({
+                    id: notification.id,
+                    payload: { isRead: true },
+                  })
+                }
                 isMarking={markAsReadMutation.isPending}
                 formatDate={formatDate}
               />

@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
   Calendar,
@@ -11,17 +10,16 @@ import {
   FileText,
   StickyNote,
 } from "lucide-react";
-import toast from "react-hot-toast";
 import { useEffect } from "react";
 
 import {
-  updateSession,
-  fetchSessionById,
-  fetchSessionTypes,
-  fetchSessionStatuses,
-} from "../apis/sessionsApis";
-import { getCaseDropdown } from "@/features/cases/apis/casesApis";
-import { getCourtDropdownApi } from "@/features/courts/apis/courtsApis";
+  useSessionById,
+  useSessionTypes,
+  useSessionStatuses,
+  useUpdateSession,
+} from "../hooks/sessionsHooks";
+import { useCaseDropdown } from "@/features/cases/hooks/caseHooks";
+import { useCourtDropdown } from "@/features/courts/hooks/courtsHooks";
 import {
   updateSessionSchema,
   type UpdateSessionFormData,
@@ -42,39 +40,25 @@ export default function EditSessionForm({
   onSuccess,
   onCancel,
 }: EditSessionFormProps) {
-  const queryClient = useQueryClient();
+  // Fetch session data using hook
+  const { data: sessionData, isLoading: isLoadingSession } =
+    useSessionById(sessionId);
 
-  // Fetch session data
-  const { data: sessionData, isLoading: isLoadingSession } = useQuery({
-    queryKey: ["session", sessionId],
-    queryFn: () => fetchSessionById(sessionId),
-    enabled: !!sessionId,
-  });
+  // Fetch session types using hook
+  const { data: sessionTypes = [] } = useSessionTypes();
 
-  // Fetch session types
-  const { data: sessionTypes = [] } = useQuery({
-    queryKey: ["sessionTypes"],
-    queryFn: fetchSessionTypes,
-  });
+  // Fetch session statuses using hook
+  const { data: sessionStatuses = [] } = useSessionStatuses();
 
-  // Fetch session statuses
-  const { data: sessionStatuses = [] } = useQuery({
-    queryKey: ["sessionStatuses"],
-    queryFn: fetchSessionStatuses,
-  });
+  // Update session mutation using hook
+  const mutation = useUpdateSession();
 
-  // Fetch cases for dropdown
-  const { data: casesData } = useQuery({
-    queryKey: ["casesDropdown"],
-    queryFn: () => getCaseDropdown({ PageSize: 100 }),
-  });
+  // Fetch cases for dropdown using hook
+  const { data: casesData } = useCaseDropdown({ PageSize: 100 });
   const cases = Array.isArray(casesData?.data) ? casesData.data : [];
 
-  // Fetch courts for dropdown
-  const { data: courtsData } = useQuery({
-    queryKey: ["courtsDropdown"],
-    queryFn: () => getCourtDropdownApi({ PageSize: 100 }),
-  });
+  // Fetch courts for dropdown using hook
+  const { data: courtsData } = useCourtDropdown({ PageSize: 100 });
   const courts = courtsData?.data ?? [];
 
   const {
@@ -110,46 +94,24 @@ export default function EditSessionForm({
     }
   }, [sessionData, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: UpdateSessionFormData) => {
-      const payload = {
-        sessionDate: new Date(data.sessionDate).toISOString(),
-        sessionType: data.sessionType as SessionTypeValue,
-        sessionStatus: data.sessionStatus as SessionStatusValue,
-        caseId: data.caseId,
-        courtId: data.courtId,
-        notes: data.notes || "",
-        result: data.result || "",
-      };
-      return updateSession(sessionId, payload);
-    },
-    onSuccess: () => {
-      toast.success("تم تحديث الجلسة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
-      onSuccess?.();
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Update session error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء تحديث الجلسة"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: UpdateSessionFormData) => {
-    mutation.mutate(data);
+    const payload = {
+      sessionDate: new Date(data.sessionDate).toISOString(),
+      sessionType: data.sessionType as SessionTypeValue,
+      sessionStatus: data.sessionStatus as SessionStatusValue,
+      caseId: data.caseId,
+      courtId: data.courtId,
+      notes: data.notes || "",
+      result: data.result || "",
+    };
+    mutation.mutate(
+      { id: sessionId, data: payload },
+      {
+        onSuccess: () => {
+          onSuccess?.();
+        },
+      }
+    );
   };
 
   if (isLoadingSession) {

@@ -2,12 +2,13 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Shield } from "lucide-react";
-import toast from "react-hot-toast";
 import { useEffect } from "react";
 
-import { updatePermission, getPermissionById } from "../apis/permissionsApi";
+import {
+  usePermissionById,
+  useUpdatePermission,
+} from "../hooks/permissionsHooks";
 import {
   updatePermissionSchema,
   type UpdatePermissionFormData,
@@ -36,14 +37,11 @@ export default function EditPermissionForm({
   onSuccess,
   onCancel,
 }: EditPermissionFormProps) {
-  const queryClient = useQueryClient();
+  // Fetch permission data using hook
+  const { data: permission, isLoading } = usePermissionById(permissionId);
 
-  // Fetch permission data
-  const { data: permission, isLoading } = useQuery({
-    queryKey: ["permission", permissionId],
-    queryFn: () => getPermissionById(permissionId),
-    enabled: !!permissionId,
-  });
+  // Update permission using hook
+  const mutation = useUpdatePermission();
 
   const {
     register,
@@ -82,42 +80,17 @@ export default function EditPermissionForm({
     }
   }, [permission, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: UpdatePermissionFormData) =>
-      updatePermission(permissionId, data),
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم تحديث الصلاحية بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["permissions"] });
-        queryClient.invalidateQueries({
-          queryKey: ["permission", permissionId],
-        });
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر تحديث الصلاحية");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Update permission error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء تحديث الصلاحية"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: UpdatePermissionFormData) => {
-    mutation.mutate(data);
+    mutation.mutate(
+      { id: permissionId, data },
+      {
+        onSuccess: (response) => {
+          if (response?.succeeded) {
+            onSuccess?.();
+          }
+        },
+      }
+    );
   };
 
   if (isLoading) {

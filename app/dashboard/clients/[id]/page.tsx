@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowRight,
   Phone,
   Mail,
   MapPin,
@@ -21,6 +20,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { BackButton } from "@/shared/components/ui";
 
 import {
   getClientById,
@@ -238,13 +238,11 @@ export default function ClientDetailsPage() {
     <section className="space-y-6">
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3">
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-        >
-          <ArrowRight size={18} />
-          العودة
-        </button>
+        <BackButton
+          label="العودة"
+          variant="outline"
+          fallbackUrl="/dashboard/clients"
+        />
 
         {client && (
           <div className="flex flex-wrap items-center gap-2">
@@ -464,7 +462,9 @@ export default function ClientDetailsPage() {
                           </p>
                           <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
                             <Briefcase size={14} className="text-gray-400" />
-                            <span className="truncate">{employee.position}</span>
+                            <span className="truncate">
+                              {employee.position}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -472,7 +472,11 @@ export default function ClientDetailsPage() {
                       <div className="mt-4 space-y-2 text-sm">
                         <div className="flex items-center gap-2 text-gray-700">
                           <Mail size={14} className="text-gray-400" />
-                          <span className="truncate block" dir="ltr" title={employee.email}>
+                          <span
+                            className="truncate block"
+                            dir="ltr"
+                            title={employee.email}
+                          >
                             {employee.email}
                           </span>
                         </div>
@@ -860,7 +864,9 @@ export default function ClientDetailsPage() {
               clientId={clientId}
               onSuccess={() => {
                 setShowEditModal(false);
-                queryClient.invalidateQueries({ queryKey: ["client", clientId] });
+                queryClient.invalidateQueries({
+                  queryKey: ["client", clientId],
+                });
                 queryClient.invalidateQueries({ queryKey: ["clients"] });
               }}
               onCancel={() => setShowEditModal(false)}

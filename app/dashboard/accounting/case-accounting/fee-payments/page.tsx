@@ -312,7 +312,7 @@ export default function FeePaymentsPage() {
       Search: filters.Search?.trim() || undefined,
       Sort: filters.Sort || undefined,
       IsDeleted: filters.IsDeleted ? true : undefined,
-      CaseFeeId: filters.CaseFeeId || undefined,
+      CaseId: filters.CaseId || undefined,
       PaymentMethod: filters.PaymentMethod || undefined,
       Status: filters.Status || undefined,
       AmountStart: filters.AmountStart || undefined,
@@ -345,7 +345,7 @@ export default function FeePaymentsPage() {
 
   // Fetch case fees for mapping
   const allFeeIds = useMemo(() => {
-    return [...new Set(payments.map((payment) => payment.caseFeeId))];
+    return [...new Set(payments.map((payment) => payment.caseId))];
   }, [payments]);
 
   const { data: feesData } = useQuery({
@@ -687,7 +687,7 @@ export default function FeePaymentsPage() {
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border bg-purple-50 text-purple-800 border-purple-200">
                           <Hash size={12} />
-                          {payment.caseFeeId}
+                          {payment.caseId}
                         </span>
                       </td>
 

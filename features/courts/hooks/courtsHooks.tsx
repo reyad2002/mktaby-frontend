@@ -8,8 +8,13 @@ import {
   getCourtTypesApi,
   updateCourtApi,
   getCourtByIdApi,
+  getCourtDropdownApi,
 } from "@/features/courts/apis/courtsApis";
-import { Params, CreateCourtRequest } from "../types/courtsTypes";
+import {
+  Params,
+  CreateCourtRequest,
+  CourtDropdownQuery,
+} from "../types/courtsTypes";
 export function useCourtsResources(params: Params) {
   return useQuery({
     queryKey: ["courts", params],
@@ -83,6 +88,14 @@ export function useCourtById(courtId: number) {
     queryKey: ["court", courtId],
     queryFn: () => getCourtByIdApi(courtId),
     enabled: !!courtId,
+    staleTime: 10_000,
+  });
+}
+// ===========================
+export function useCourtDropdown(params: CourtDropdownQuery = {}) {
+  return useQuery({
+    queryKey: ["courtsDropdown", params],
+    queryFn: () => getCourtDropdownApi(params),
     staleTime: 10_000,
   });
 }

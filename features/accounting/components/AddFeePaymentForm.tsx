@@ -2,20 +2,21 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { createFeePayment } from "../apis/FeePaymentApi";
-import { getCaseFees } from "../apis/CaseFeesApi";
 import {
   createFeePaymentSchema,
   type CreateFeePaymentFormData,
 } from "../validations/feePaymentValidation";
+import { useCaseDropdown } from "@/features/cases/hooks/caseHooks";
 
 interface Props {
   onSuccess?: () => void;
   onCancel?: () => void;
+  defaultCaseId?: number;
 }
 
 const PAYMENT_METHODS = [
@@ -32,7 +33,11 @@ const PAYMENT_STATUS = [
   { value: "Overdue", label: "متأخر" },
 ];
 
-export default function AddFeePaymentForm({ onSuccess, onCancel }: Props) {
+export default function AddFeePaymentForm({
+  onSuccess,
+  onCancel,
+  defaultCaseId,
+}: Props) {
   const {
     register,
     handleSubmit,
@@ -42,7 +47,7 @@ export default function AddFeePaymentForm({ onSuccess, onCancel }: Props) {
     resolver: zodResolver(createFeePaymentSchema),
     defaultValues: {
       title: "",
-      caseFeeId: undefined,
+      caseId: defaultCaseId || undefined,
       amount: undefined,
       paymentDate: "",
       paymentMethod: "Cash",
@@ -51,13 +56,9 @@ export default function AddFeePaymentForm({ onSuccess, onCancel }: Props) {
     },
   });
 
-  // Fetch case fees for dropdown
-  const { data: feesData } = useQuery({
-    queryKey: ["caseFees", { PageSize: 100 }],
-    queryFn: () => getCaseFees({ PageSize: 100 }),
-  });
-
-  const fees = feesData?.data?.data ?? [];
+  // fetch cases for dropdown
+  const { data: casesDropdownData } = useCaseDropdown({ PageSize: 1000 });
+  const cases = casesDropdownData?.data || [];
 
   const mutation = useMutation({
     mutationFn: createFeePayment,
@@ -79,7 +80,7 @@ export default function AddFeePaymentForm({ onSuccess, onCancel }: Props) {
     // Transform dates to ISO format to match API requirements
     const payload = {
       title: data.title,
-      caseFeeId: data.caseFeeId,
+      caseId: data.caseId,
       amount: data.amount,
       paymentDate: new Date(data.paymentDate).toISOString(),
       paymentMethod: data.paymentMethod,
@@ -107,40 +108,41 @@ export default function AddFeePaymentForm({ onSuccess, onCancel }: Props) {
         )}
       </div>
 
-      {/* Case Fee */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          الرسوم <span className="text-red-500">*</span>
-        </label>
-        <Controller
-          name="caseFeeId"
-          control={control}
-          render={({ field }) => (
-            <select
-              {...field}
-              value={field.value || ""}
-              onChange={(e) =>
-                field.onChange(
-                  e.target.value ? Number(e.target.value) : undefined
-                )
-              }
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-            >
-              <option value="">اختر الرسوم</option>
-              {fees.map((fee) => (
-                <option key={fee.id} value={fee.id}>
-                  رسوم #{fee.id} - {fee.amount} جنيه
-                </option>
-              ))}
-            </select>
+      {/* Case - Hidden if defaultCaseId is provided */}
+      {!defaultCaseId && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            القضية <span className="text-red-500">*</span>
+          </label>
+          <Controller
+            name="caseId"
+            control={control}
+            render={({ field }) => (
+              <select
+                {...field}
+                value={field.value || ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+              >
+                <option value="">اختر القضية</option>
+                {cases.map((caseItem) => (
+                  <option key={caseItem.id} value={caseItem.id}>
+                    {caseItem.name} - {caseItem.caseNumber} (
+                    {caseItem.clientName})
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {errors.caseId && (
+            <p className="text-red-600 text-sm mt-1">{errors.caseId.message}</p>
           )}
-        />
-        {errors.caseFeeId && (
-          <p className="text-red-600 text-sm mt-1">
-            {errors.caseFeeId.message}
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Amount & Payment Method */}
       <div className="grid grid-cols-2 gap-3">

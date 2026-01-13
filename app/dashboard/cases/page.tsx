@@ -32,6 +32,8 @@ import {
   useSoftDeleteCase,
   useHardDeleteCase,
   useRestoreCase,
+  useArchiveCase,
+  useUnarchiveCase,
 } from "@/features/cases/hooks/caseHooks";
 
 import EditCaseForm from "@/features/cases/components/EditCaseForm";
@@ -50,6 +52,7 @@ const DEFAULT_FILTERS: GetCasesQuery = {
   CaseType: undefined,
   CaseStatus: undefined,
   IsDeleted: false,
+  IsArchived: false,
 };
 
 const SORT_OPTIONS = [
@@ -353,6 +356,8 @@ export default function CasesPage() {
   const softDeleteMutation = useSoftDeleteCase();
   const hardDeleteMutation = useHardDeleteCase();
   const restoreMutation = useRestoreCase();
+  const archiveMutation = useArchiveCase();
+  const unarchiveMutation = useUnarchiveCase();
 
   const queryParams = useMemo(() => {
     return {
@@ -362,6 +367,7 @@ export default function CasesPage() {
       CaseType: filters.CaseType || undefined,
       CaseStatus: filters.CaseStatus || undefined,
       IsDeleted: filters.IsDeleted ? true : undefined,
+      IsArchived: filters.IsArchived,
     } satisfies GetCasesQuery;
   }, [filters]);
 
@@ -394,7 +400,7 @@ export default function CasesPage() {
 
   const handleSoftDelete = (id: number, name: string) => {
     if (
-      window.confirm(`هل تريد أرشفة القضية "${name}"؟\nيمكن استعادتها لاحقاً.`)
+      window.confirm(`هل تريد حذف القضية "${name}"؟\nيمكن استعادتها لاحقاً.`)
     ) {
       softDeleteMutation.mutate(id);
     }
@@ -413,6 +419,22 @@ export default function CasesPage() {
   const handleRestore = (id: number, name: string) => {
     if (window.confirm(`هل تريد استعادة القضية "${name}"؟`)) {
       restoreMutation.mutate(id);
+    }
+  };
+
+  const handleArchive = (id: number, name: string) => {
+    if (
+      window.confirm(
+        `هل تريد أرشفة القضية "${name}"؟\nيمكن إلغاء الأرشفة لاحقاً.`
+      )
+    ) {
+      archiveMutation.mutate(id);
+    }
+  };
+
+  const handleUnarchive = (id: number, name: string) => {
+    if (window.confirm(`هل تريد إلغاء أرشفة القضية "${name}"؟`)) {
+      unarchiveMutation.mutate(id);
     }
   };
 
@@ -463,7 +485,7 @@ export default function CasesPage() {
             <button
               type="button"
               onClick={() => setMoreOpen((p) => !p)}
-              className={`w-full h-[52px] flex items-center justify-between gap-3 px-5 rounded-2xl border font-extrabold transition-all ${
+              className={`w-full h-13 flex items-center justify-between gap-3 px-5 rounded-2xl border font-extrabold transition-all ${
                 moreOpen
                   ? "bg-white border-primary/40 ring-4 ring-primary/10"
                   : "bg-gray-50/50 border-gray-200 hover:bg-white"
@@ -549,36 +571,6 @@ export default function CasesPage() {
                           )
                         }
                       />
-                      // <div key={select.key}>
-                      //   <label className="block text-sm font-bold text-gray-700 mb-2">
-                      //     {select.label}
-                      //   </label>
-                      //   <div className="relative">
-                      //     <select
-                      //       value={String(
-                      //         filters[select.key as keyof GetCasesQuery] || ""
-                      //       )}
-                      //       onChange={(e) =>
-                      //         updateFilter(
-                      //           select.key as keyof GetCasesQuery,
-                      //           e.target.value
-                      //         )
-                      //       }
-                      //       className="w-full appearance-none pr-4 pl-10 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 font-medium focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
-                      //     >
-                      //       <option value="">الكل</option>
-                      //       {select.options.map((o) => (
-                      //         <option key={o.value} value={o.value}>
-                      //           {o.label}
-                      //         </option>
-                      //       ))}
-                      //     </select>
-                      //     <ChevronDown
-                      //       size={18}
-                      //       className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                      //     />
-                      //   </div>
-                      // </div>
                     ))}
 
                     {/* Actions */}
@@ -606,26 +598,72 @@ export default function CasesPage() {
         </div>
         {/* Status */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2 mt-6">
             حالة السجلات
           </label>
           <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
             {[
-              { value: false, label: "النشطة", icon: CheckCircle2 },
-              { value: true, label: "المؤرشفة", icon: Archive },
+              {
+                key: "active",
+                label: "النشطة",
+                icon: CheckCircle2,
+                color: "bg-primary",
+              },
+              {
+                key: "archived",
+                label: "المؤرشفة",
+                icon: Archive,
+                color: "bg-amber-500",
+              },
+              {
+                key: "deleted",
+                label: "المحذوفة",
+                icon: Trash2,
+                color: "bg-red-500",
+              },
             ].map((opt) => {
-              const active = filters.IsDeleted === opt.value;
+              const isActive =
+                opt.key === "active" &&
+                !filters.IsArchived &&
+                !filters.IsDeleted;
+              const isArchived =
+                opt.key === "archived" &&
+                filters.IsArchived &&
+                !filters.IsDeleted;
+              const isDeleted = opt.key === "deleted" && filters.IsDeleted;
+              const active = isActive || isArchived || isDeleted;
               const Icon = opt.icon;
               return (
                 <button
-                  key={String(opt.value)}
+                  key={opt.key}
                   type="button"
-                  onClick={() => updateFilter("IsDeleted", opt.value)}
+                  onClick={() => {
+                    if (opt.key === "active") {
+                      setFilters((prev) => ({
+                        ...prev,
+                        IsArchived: false,
+                        IsDeleted: false,
+                        PageNumber: 1,
+                      }));
+                    } else if (opt.key === "archived") {
+                      setFilters((prev) => ({
+                        ...prev,
+                        IsArchived: true,
+                        IsDeleted: false,
+                        PageNumber: 1,
+                      }));
+                    } else {
+                      setFilters((prev) => ({
+                        ...prev,
+                        IsArchived: false,
+                        IsDeleted: true,
+                        PageNumber: 1,
+                      }));
+                    }
+                  }}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
                     active
-                      ? opt.value
-                        ? "bg-red-500 text-white"
-                        : "bg-primary text-white"
+                      ? `${opt.color} text-white`
                       : "text-gray-500 hover:bg-gray-200/50"
                   }`}
                 >
@@ -809,10 +847,11 @@ export default function CasesPage() {
                         </IconButton>
 
                         {filters.IsDeleted ? (
+                          /* Deleted cases: Restore or Hard Delete */
                           <>
                             <IconButton
                               title="استعادة"
-                              // className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-green-600 hover:bg-green-50 hover:border-green-200 transition-all active:scale-90 shadow-sm"
+                              variant="green"
                               disabled={restoreMutation.isPending}
                               onClick={() =>
                                 handleRestore(caseItem.id, caseItem.name)
@@ -827,7 +866,7 @@ export default function CasesPage() {
 
                             <IconButton
                               title="حذف نهائي"
-                              // className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200 transition-all active:scale-90 shadow-sm"
+                              variant="red"
                               disabled={hardDeleteMutation.isPending}
                               onClick={() =>
                                 handleHardDelete(caseItem.id, caseItem.name)
@@ -840,21 +879,72 @@ export default function CasesPage() {
                               )}
                             </IconButton>
                           </>
+                        ) : filters.IsArchived ? (
+                          /* Archived cases: Unarchive or Delete */
+                          <>
+                            <IconButton
+                              title="إلغاء الأرشفة"
+                              variant="green"
+                              disabled={unarchiveMutation.isPending}
+                              onClick={() =>
+                                handleUnarchive(caseItem.id, caseItem.name)
+                              }
+                            >
+                              {unarchiveMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <RotateCcw size={16} strokeWidth={2.5} />
+                              )}
+                            </IconButton>
+
+                            <IconButton
+                              title="حذف"
+                              variant="red"
+                              disabled={softDeleteMutation.isPending}
+                              onClick={() =>
+                                handleSoftDelete(caseItem.id, caseItem.name)
+                              }
+                            >
+                              {softDeleteMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={16} strokeWidth={2.5} />
+                              )}
+                            </IconButton>
+                          </>
                         ) : (
-                          <IconButton
-                            title="أرشفة"
-                            // className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-all active:scale-90 shadow-sm"
-                            disabled={softDeleteMutation.isPending}
-                            onClick={() =>
-                              handleSoftDelete(caseItem.id, caseItem.name)
-                            }
-                          >
-                            {softDeleteMutation.isPending ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <Archive size={16} strokeWidth={2.5} />
-                            )}
-                          </IconButton>
+                          /* Active cases: Archive or Delete */
+                          <>
+                            <IconButton
+                              title="أرشفة"
+                              variant="orange"
+                              disabled={archiveMutation.isPending}
+                              onClick={() =>
+                                handleArchive(caseItem.id, caseItem.name)
+                              }
+                            >
+                              {archiveMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Archive size={16} strokeWidth={2.5} />
+                              )}
+                            </IconButton>
+
+                            <IconButton
+                              title="حذف"
+                              variant="red"
+                              disabled={softDeleteMutation.isPending}
+                              onClick={() =>
+                                handleSoftDelete(caseItem.id, caseItem.name)
+                              }
+                            >
+                              {softDeleteMutation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={16} strokeWidth={2.5} />
+                              )}
+                            </IconButton>
+                          </>
                         )}
                       </div>
                     </td>

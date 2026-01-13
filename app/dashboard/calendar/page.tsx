@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
@@ -12,8 +12,9 @@ import {
   Info,
   CalendarDays,
   ChevronDown,
+  Search,
+  Check,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import {
@@ -91,13 +92,164 @@ const getEntityColor = (entityType: EntityType): string => {
     CompanyEmployee: "bg-pink-50 text-pink-700 border-pink-200",
     Office: "bg-indigo-50 text-indigo-700 border-indigo-200",
     Folder: "bg-amber-50 text-amber-700 border-amber-200",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (colors as any)[entityType] || "bg-gray-50 text-gray-700 border-gray-200";
 };
 
+function useLockBodyScroll(locked: boolean) {
+  useEffect(() => {
+    if (!locked) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [locked]);
+}
+
+/* ========= Custom Select (Premium + Search) ========= */
+type Opt = { label: string; value: string };
+type CustomSelectProps = {
+  label: string;
+  value: string;
+  options: Opt[];
+  placeholder?: string;
+  onChange: (val: string) => void;
+};
+
+function OptionRow({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-gray-700 hover:bg-gray-100/70"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check size={16} className="shrink-0" />}
+    </button>
+  );
+}
+
+function CustomSelect({
+  label,
+  value,
+  options,
+  placeholder = "الكل",
+  onChange,
+}: CustomSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => o.value === value);
+  const shownLabel = value ? selected?.label ?? placeholder : placeholder;
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    if (!qq) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(qq));
+  }, [q, options]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative" dir="rtl">
+      <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
+          open
+            ? "bg-white border-primary/40 ring-4 ring-primary/10"
+            : "bg-gray-50/60 border-gray-200 hover:bg-white"
+        }`}
+      >
+        <span className="text-gray-800 font-bold truncate">{shownLabel}</span>
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)] overflow-hidden">
+          <div className="p-3 border-b border-gray-100">
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none">
+                <Search size={16} />
+              </div>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ابحث..."
+                className="w-full pr-9 pl-3 py-2.5 rounded-2xl bg-gray-50/70 border border-gray-200 text-sm font-semibold text-gray-700 placeholder:text-gray-400 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-auto p-2">
+            <OptionRow
+              active={!value}
+              label={placeholder}
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQ("");
+              }}
+            />
+            {filtered.map((o) => (
+              <OptionRow
+                key={o.value}
+                active={value === o.value}
+                label={o.label}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQ("");
+                }}
+              />
+            ))}
+
+            {filtered.length === 0 && (
+              <div className="p-4 text-sm font-bold text-gray-500 text-center">
+                لا توجد نتائج
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========= States ========= */
 function LoadingState() {
   return (
     <div className="flex items-center justify-center min-h-[55vh]">
@@ -113,6 +265,10 @@ export default function CalendarPage() {
     EntityType | undefined
   >();
   const [viewMode, setViewMode] = useState<"month" | "day">("month");
+
+  // ✅ Same pattern like your other pages: put advanced controls inside a dropdown
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  useLockBodyScroll(filtersOpen);
 
   const monthStart = new Date(
     currentDate.getFullYear(),
@@ -297,6 +453,19 @@ export default function CalendarPage() {
     year: "numeric",
   });
 
+  const entityOptions: Opt[] = useMemo(
+    () => ENTITY_TYPES.map((t) => ({ value: t.value, label: t.label })),
+    []
+  );
+
+  const hasError = isMonthError || isDayError;
+  const errorText =
+    monthError instanceof Error
+      ? monthError.message
+      : dayError instanceof Error
+      ? dayError.message
+      : "";
+
   return (
     <section className="space-y-6 relative">
       {/* Premium background */}
@@ -323,7 +492,7 @@ export default function CalendarPage() {
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
               <SlidersHorizontal size={16} className="text-blue-700" />
             </span>
-            الفلاتر والتحكم
+            التحكم والفلاتر
           </div>
 
           <div className="flex items-center gap-2">
@@ -342,6 +511,7 @@ export default function CalendarPage() {
               تحديث
             </button>
 
+            {/* View mode segmented */}
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode("month")}
@@ -366,39 +536,22 @@ export default function CalendarPage() {
                 عرض يومي
               </button>
             </div>
+
+            {/* ✅ Filters dropdown like the other pages */}
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <SlidersHorizontal size={16} className="text-blue-700" />
+              فلاتر
+            </button>
           </div>
         </div>
 
+        {/* Summary row (always visible) */}
         <div className="p-4 sm:p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <label className="text-sm">
-              <span className="block text-gray-700 font-medium mb-2">
-                نوع الكيان
-              </span>
-              <div className="relative">
-                <select
-                  value={selectedEntityType || ""}
-                  onChange={(e) =>
-                    setSelectedEntityType(
-                      (e.target.value || undefined) as EntityType
-                    )
-                  }
-                  className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300"
-                >
-                  <option value="">الكل</option>
-                  {ENTITY_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </label>
-
             <div className="text-sm flex items-end">
               <div className="w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3">
                 <div className="flex items-center gap-2 text-gray-700">
@@ -414,23 +567,142 @@ export default function CalendarPage() {
                     </span>
                   </div>
                 )}
+                {selectedEntityType && (
+                  <div className="mt-1 text-xs text-gray-600">
+                    النوع:{" "}
+                    <span className="font-semibold text-gray-900">
+                      {ENTITY_TYPES.find((t) => t.value === selectedEntityType)?.label ||
+                        selectedEntityType}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {(isMonthError || isDayError) && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-              <Info size={16} />
-              حدث خطأ:{" "}
-              {monthError instanceof Error
-                ? monthError.message
-                : dayError instanceof Error
-                ? dayError.message
-                : ""}
-            </div>
-          )}
+            {hasError ? (
+              <div className="flex items-end">
+                <div className="w-full flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-3 rounded-xl">
+                  <Info size={16} />
+                  حدث خطأ: {errorText}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
+
+      {/* ✅ Filters Modal */}
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setFiltersOpen(false)}
+          />
+          <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl border border-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+                  <SlidersHorizontal size={18} className="text-blue-700" />
+                </span>
+                فلاتر التقويم
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="p-2 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors"
+                aria-label="Close"
+              >
+                <ChevronDown size={18} className="rotate-180" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <CustomSelect
+                label="نوع الكيان"
+                value={selectedEntityType ?? ""}
+                options={entityOptions}
+                placeholder="الكل"
+                onChange={(val) =>
+                  setSelectedEntityType((val || undefined) as EntityType)
+                }
+              />
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+                  وضع العرض
+                </label>
+                <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("month")}
+                    className={`flex-1 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                      viewMode === "month"
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-500 hover:bg-gray-200/50"
+                    }`}
+                  >
+                    عرض شهري
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("day")}
+                    disabled={!selectedDate}
+                    className={`flex-1 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                      viewMode === "day" && selectedDate
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-500 hover:bg-gray-200/50 disabled:opacity-50"
+                    }`}
+                  >
+                    عرض يومي
+                  </button>
+                </div>
+                {!selectedDate && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    * العرض اليومي يحتاج اختيار يوم من التقويم أولاً
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedEntityType(undefined);
+                    setFiltersOpen(false);
+                  }}
+                  className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-red-500 bg-red-50 hover:bg-red-100"
+                >
+                  مسح الفلاتر
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-gray-100 hover:bg-gray-200"
+                >
+                  تم
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  refetchMonth();
+                  if (selectedDate) refetchDay();
+                  setFiltersOpen(false);
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+              >
+                <RefreshCw
+                  size={16}
+                  className={isFetchingMonth || isFetchingDay ? "animate-spin" : ""}
+                />
+                تحديث النتائج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Month View */}
       {viewMode === "month" && (

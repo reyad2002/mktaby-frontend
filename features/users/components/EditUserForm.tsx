@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Loader2, Upload } from "lucide-react";
 import Image from "next/image";
-import { updateUser, getUserById, setProfileImage } from "../apis/usersApi";
-import { fetchPermissions } from "@/features/permissions/apis/permissionsApi";
+import {
+  useUserById,
+  useUpdateUser,
+  useSetProfileImage,
+} from "../hooks/usersHooks";
+import { usePermissions } from "@/features/permissions/hooks/permissionsHooks";
 import type { UpdateUserRequest } from "../types/userTypes";
 
 interface EditUserFormProps {
@@ -19,7 +22,6 @@ export default function EditUserForm({
   onSuccess,
   onCancel,
 }: EditUserFormProps) {
-  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<UpdateUserRequest>({
     id: userId,
     name: "",
@@ -31,20 +33,14 @@ export default function EditUserForm({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch user details
-  const { data: userResponse, isLoading: isLoadingUser } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUserById(userId),
-    enabled: !!userId,
-  });
+  const { data: userResponse, isLoading: isLoadingUser } = useUserById(userId);
 
   // Fetch permissions
-  const { data: permissionsData } = useQuery({
-    queryKey: ["permissions"],
-    queryFn: () => fetchPermissions({}),
-  });
+  const { data: permissionsData } = usePermissions({});
 
   const permissions = permissionsData?.data?.data ?? [];
   const user = userResponse?.data;
+
   // Initialize form data from user response
   useEffect(() => {
     if (user && !formData.name) {
@@ -62,26 +58,9 @@ export default function EditUserForm({
     }
   }, [user, userId, formData.name, imagePreview]);
 
-  const updateMutation = useMutation({
-    mutationFn: updateUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["user", userId] });
-      if (!selectedImage) {
-        onSuccess?.();
-      }
-    },
-  });
+  const updateMutation = useUpdateUser();
 
-  const imageMutation = useMutation({
-    mutationFn: ({ id, file }: { id: number; file: File }) =>
-      setProfileImage(id, file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["user", userId] });
-      onSuccess?.();
-    },
-  });
+  const imageMutation = useSetProfileImage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +68,8 @@ export default function EditUserForm({
       await updateMutation.mutateAsync(formData);
       if (selectedImage) {
         await imageMutation.mutateAsync({ id: userId, file: selectedImage });
-      } else {
-        onSuccess?.();
       }
+      onSuccess?.();
     } catch (error) {
       console.error("Error updating user:", error);
     }

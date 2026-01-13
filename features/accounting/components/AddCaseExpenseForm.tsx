@@ -16,9 +16,14 @@ import {
 interface Props {
   onSuccess?: () => void;
   onCancel?: () => void;
+  defaultCaseId?: number;
 }
 
-export default function AddCaseExpenseForm({ onSuccess, onCancel }: Props) {
+export default function AddCaseExpenseForm({
+  onSuccess,
+  onCancel,
+  defaultCaseId,
+}: Props) {
   const queryClient = useQueryClient();
 
   const {
@@ -29,7 +34,7 @@ export default function AddCaseExpenseForm({ onSuccess, onCancel }: Props) {
   } = useForm<AddCaseExpenseFormData>({
     resolver: zodResolver(addCaseExpenseSchema),
     defaultValues: {
-      caseId: undefined,
+      caseId: defaultCaseId || undefined,
       amount: undefined,
       expenseDate: new Date().toISOString().split("T")[0],
     },
@@ -73,42 +78,46 @@ export default function AddCaseExpenseForm({ onSuccess, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Case Selection */}
-      <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-          <Briefcase size={16} className="text-blue-600" />
-          القضية <span className="text-red-500">*</span>
-        </label>
-        <Controller
-          name="caseId"
-          control={control}
-          render={({ field }) => (
-            <select
-              {...field}
-              value={field.value ?? ""}
-              onChange={(e) =>
-                field.onChange(
-                  e.target.value ? Number(e.target.value) : undefined
-                )
-              }
-              disabled={casesLoading}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white disabled:bg-gray-50"
-            >
-              <option value="">
-                {casesLoading ? "جاري التحميل..." : "اختر القضية"}
-              </option>
-              {cases.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} - {c.caseNumber}
+      {/* Case Selection - Hidden if defaultCaseId is provided */}
+      {!defaultCaseId && (
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+            <Briefcase size={16} className="text-blue-600" />
+            القضية <span className="text-red-500">*</span>
+          </label>
+          <Controller
+            name="caseId"
+            control={control}
+            render={({ field }) => (
+              <select
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
+                disabled={casesLoading}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white disabled:bg-gray-50"
+              >
+                <option value="">
+                  {casesLoading ? "جاري التحميل..." : "اختر القضية"}
                 </option>
-              ))}
-            </select>
+                {cases.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} - {c.caseNumber}
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {errors.caseId && (
+            <p className="mt-1.5 text-sm text-red-600">
+              {errors.caseId.message}
+            </p>
           )}
-        />
-        {errors.caseId && (
-          <p className="mt-1.5 text-sm text-red-600">{errors.caseId.message}</p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Amount */}
       <div>

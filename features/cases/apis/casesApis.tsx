@@ -12,6 +12,8 @@ import type {
   SoftDeleteCaseResponse,
   HardDeleteCaseResponse,
   RestoreCaseResponse,
+  ArchiveCaseResponse,
+  UnarchiveCaseResponse,
   CaseDropdownQuery,
   GetCaseDropdownResponse,
   CaseResourcesQuery,
@@ -26,6 +28,8 @@ import {
   SOFT_DELETE_CASE_PATH,
   HARD_DELETE_CASE_PATH,
   RESTORE_CASE_PATH,
+  ARCHIVE_CASE_PATH,
+  UNARCHIVE_CASE_PATH,
   CASE_TYPES_PATH,
   CASE_STATUS_PATH,
   CASE_RESOURCES_PATH,
@@ -135,6 +139,28 @@ export async function restoreCase(
 ): Promise<RestoreCaseResponse> {
   const response = await apiClient.post<RestoreCaseResponse>(
     RESTORE_CASE_PATH(id)
+  );
+  return response.data;
+}
+// ===========================
+// PATCH /Case/{id}/archive
+// ===========================
+export async function archiveCase(
+  id: number | string
+): Promise<ArchiveCaseResponse> {
+  const response = await apiClient.patch<ArchiveCaseResponse>(
+    ARCHIVE_CASE_PATH(id)
+  );
+  return response.data;
+}
+// ===========================
+// PATCH /Case/{id}/unarchive
+// ===========================
+export async function unarchiveCase(
+  id: number | string
+): Promise<UnarchiveCaseResponse> {
+  const response = await apiClient.patch<UnarchiveCaseResponse>(
+    UNARCHIVE_CASE_PATH(id)
   );
   return response.data;
 }

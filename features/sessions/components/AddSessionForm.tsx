@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
   Calendar,
@@ -11,15 +10,14 @@ import {
   FileText,
   StickyNote,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  createSession,
-  fetchSessionTypes,
-  fetchSessionStatuses,
-} from "../apis/sessionsApis";
-import { getCaseDropdown } from "@/features/cases/apis/casesApis";
-import { getCourtDropdownApi } from "@/features/courts/apis/courtsApis";
+  useCreateSession,
+  useSessionTypes,
+  useSessionStatuses,
+} from "../hooks/sessionsHooks";
+import { useCaseDropdown } from "@/features/cases/hooks/caseHooks";
+import { useCourtDropdown } from "@/features/courts/hooks/courtsHooks";
 import {
   addSessionSchema,
   type AddSessionFormData,
@@ -38,32 +36,21 @@ export default function AddSessionForm({
   onSuccess,
   onCancel,
 }: AddSessionFormProps) {
-  const queryClient = useQueryClient();
+  // Fetch session types using hook
+  const { data: sessionTypes = [] } = useSessionTypes();
 
-  // Fetch session types
-  const { data: sessionTypes = [] } = useQuery({
-    queryKey: ["sessionTypes"],
-    queryFn: fetchSessionTypes,
-  });
+  // Fetch session statuses using hook
+  const { data: sessionStatuses = [] } = useSessionStatuses();
 
-  // Fetch session statuses
-  const { data: sessionStatuses = [] } = useQuery({
-    queryKey: ["sessionStatuses"],
-    queryFn: fetchSessionStatuses,
-  });
+  // Create session mutation using hook
+  const mutation = useCreateSession();
 
-  // Fetch cases for dropdown
-  const { data: casesData } = useQuery({
-    queryKey: ["casesDropdown"],
-    queryFn: () => getCaseDropdown({ PageSize: 100 }),
-  });
+  // Fetch cases for dropdown using hook
+  const { data: casesData } = useCaseDropdown({ PageSize: 100 });
   const cases = Array.isArray(casesData?.data) ? casesData.data : [];
 
-  // Fetch courts for dropdown
-  const { data: courtsData } = useQuery({
-    queryKey: ["courtsDropdown"],
-    queryFn: () => getCourtDropdownApi({ PageSize: 100 }),
-  });
+  // Fetch courts for dropdown using hook
+  const { data: courtsData } = useCourtDropdown({ PageSize: 100 });
   const courts = courtsData?.data ?? [];
 
   const {
@@ -84,33 +71,6 @@ export default function AddSessionForm({
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: createSession,
-    onSuccess: () => {
-      toast.success("تم إضافة الجلسة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
-      reset();
-      onSuccess?.();
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add session error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة الجلسة"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: AddSessionFormData) => {
     const payload = {
       sessionDate: new Date(data.sessionDate).toISOString(),
@@ -121,7 +81,12 @@ export default function AddSessionForm({
       notes: data.notes || "",
       result: data.result || "",
     };
-    mutation.mutate(payload);
+    mutation.mutate(payload, {
+      onSuccess: () => {
+        reset();
+        onSuccess?.();
+      },
+    });
   };
 
   return (

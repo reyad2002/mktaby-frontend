@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import {
   Building2,
@@ -16,7 +15,7 @@ import {
 } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
-import { fetchOffice } from "@/features/office/apis/officeApi";
+import { useOffice } from "@/features/office/hooks/officeHooks";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 
 // ---------- Helpers ----------
@@ -179,10 +178,8 @@ function StatCard({
 
 // ---------- Page ----------
 export default function OfficePage() {
-  const { data, isLoading, isError, isFetching } = useQuery({
-    queryKey: ["office"],
-    queryFn: fetchOffice,
-  });
+  // Fetch office data using hook
+  const { data, isLoading, isError, isFetching } = useOffice();
 
   const office = data?.data;
 

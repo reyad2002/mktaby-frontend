@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, memo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Check,
@@ -12,60 +11,31 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
-  getNotifications,
-  getUnreadNotificationCount,
-  updateNotificationById,
-} from "../apis/notificationApi";
+  useNotifications,
+  useUnreadNotificationCount,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+} from "../hooks/notificationHooks";
 import type { NotificationDto } from "../types/notificationTypes";
 
 const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
 
-  // Fetch unread count
-  const { data: unreadCountResponse } = useQuery({
-    queryKey: ["unreadNotificationCount"],
-    queryFn: getUnreadNotificationCount,
-    refetchInterval: 30000,
-    refetchIntervalInBackground: false, // Prevent memory leak - don't refetch when tab is not visible
+  // Fetch unread count using hook
+  const { data: unreadCountResponse } = useUnreadNotificationCount();
+
+  // Fetch notifications using hook (only when dropdown is open)
+  const { data: notificationsResponse, isLoading } = useNotifications({
+    PageSize: 10,
+    PageNumber: 1,
   });
 
-  // Fetch notifications
-  const { data: notificationsResponse, isLoading } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => getNotifications({ PageSize: 10, PageNumber: 1 }),
-    enabled: isOpen, // Only fetch when dropdown is open
-  });
+  // Mark as read mutation using hook
+  const markAsReadMutation = useMarkNotificationAsRead();
 
-  // Mark as read mutation
-  const markAsReadMutation = useMutation({
-    mutationFn: (id: number) => updateNotificationById(id, { isRead: true }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
-    },
-  });
-
-  // Mark all as read
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const unreadNotifications = notificationsResponse?.data?.data?.filter(
-        (n) => !n.isRead
-      );
-      if (unreadNotifications) {
-        await Promise.all(
-          unreadNotifications.map((n) =>
-            updateNotificationById(n.id, { isRead: true })
-          )
-        );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
-    },
-  });
+  // Mark all as read mutation using hook
+  const markAllAsReadMutation = useMarkAllNotificationsAsRead();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -103,7 +73,10 @@ const NotificationDropdown: React.FC = () => {
   const handleNotificationClick = useCallback(
     (notification: NotificationDto) => {
       if (!notification.isRead) {
-        markAsReadMutation.mutate(notification.id);
+        markAsReadMutation.mutate({
+          id: notification.id,
+          payload: { isRead: true },
+        });
       }
     },
     [markAsReadMutation]
@@ -147,7 +120,12 @@ const NotificationDropdown: React.FC = () => {
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
-                  onClick={() => markAllAsReadMutation.mutate()}
+                  onClick={() => {
+                    const unreadNotifications = notifications.filter(
+                      (n) => !n.isRead
+                    );
+                    markAllAsReadMutation.mutate(unreadNotifications);
+                  }}
                   disabled={markAllAsReadMutation.isPending}
                   className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1"
                   title="تحديد الكل كمقروء"
@@ -243,7 +221,10 @@ const NotificationDropdown: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          markAsReadMutation.mutate(notification.id);
+                          markAsReadMutation.mutate({
+                            id: notification.id,
+                            payload: { isRead: true },
+                          });
                         }}
                         disabled={markAsReadMutation.isPending}
                         className="p-1 hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-yellow-400"

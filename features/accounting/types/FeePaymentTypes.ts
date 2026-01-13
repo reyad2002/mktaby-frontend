@@ -9,7 +9,6 @@ export type FeePaymentStatus = "Unpaid" | "Paid" | "Overdue";
 
 export type GetFeePaymentsQuery = {
   CaseId?: number; // int64 (query) - Filter by case
-  CaseFeeId?: number; // int64 (query)
 
   AmountStart?: number; // double
   AmountEnd?: number; // double
@@ -35,7 +34,8 @@ export type GetFeePaymentsQuery = {
 
 export type FeePaymentDto = {
   id: number;
-  caseFeeId: number;
+  title: string;
+  caseId: number;
   amount: number;
 
   paymentDate: string; // ISO date-time
@@ -66,7 +66,7 @@ export type GetFeePaymentsResponse = ApiResponse<PaginatedFeePayments>;
 
 export type CreateFeePaymentRequest = {
   title: string;
-  caseFeeId: number; // int64
+  caseId: number; // int64
   amount: number; // double/number
   paymentDate: string; // date-time (ISO)
   paymentMethod: PaymentMethod;
@@ -78,7 +78,8 @@ export type CreateFeePaymentResponse = ApiResponse<number>;
 
 export type FeePaymentDetailsDto = {
   id: number;
-  caseFeeId: number;
+  title: string;
+  caseId: number;
   amount: number;
 
   paymentDate: string; // ISO date-time
@@ -94,7 +95,7 @@ export type GetFeePaymentByIdResponse = ApiResponse<FeePaymentDetailsDto>;
 
 export type UpdateFeePaymentRequest = {
   title: string;
-  caseFeeId: number; // int64
+  caseId: number; // int64
   amount: number; // number
   paymentDate: string; // ISO date-time
   paymentMethod: PaymentMethod;

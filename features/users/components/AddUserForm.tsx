@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Loader2, Mail, Lock, User, Phone } from "lucide-react";
-import toast from "react-hot-toast";
 
-import { addUser } from "../apis/usersApi";
-import { fetchPermissions } from "@/features/permissions/apis/permissionsApi";
+import { useAddUser } from "../hooks/usersHooks";
+import { usePermissions } from "@/features/permissions/hooks/permissionsHooks";
 import {
   addUserSchema,
   type AddUserFormData,
@@ -20,14 +18,11 @@ interface AddUserFormProps {
 }
 
 export default function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
-  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
 
   // Fetch permissions for dropdown
-  const { data: permissionsData, isLoading: permissionsLoading } = useQuery({
-    queryKey: ["permissions", { pageSize: 100 }],
-    queryFn: () => fetchPermissions({ pageSize: 100 }),
-  });
+  const { data: permissionsData, isLoading: permissionsLoading } =
+    usePermissions({ pageSize: 100 });
   const permissions = permissionsData?.data?.data ?? [];
 
   const {
@@ -42,39 +37,17 @@ export default function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: addUser,
-    onSuccess: (response) => {
-      if (response?.succeeded) {
-        toast.success(response.message || "تم إضافة المستخدم بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["users"] });
-        reset();
-        onSuccess?.();
-      } else {
-        toast.error(response?.message || "تعذر إضافة المستخدم");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Add user error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء إضافة المستخدم"
-        );
-      }
-    },
-  });
+  const mutation = useAddUser();
 
   const onSubmit = (data: AddUserFormData) => {
-    mutation.mutate(data);
+    mutation.mutate(data, {
+      onSuccess: (response) => {
+        if (response?.succeeded) {
+          reset();
+          onSuccess?.();
+        }
+      },
+    });
   };
 
   return (

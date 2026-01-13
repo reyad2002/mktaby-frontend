@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createFeePaymentSchema = z.object({
   title: z.string().min(1, "يرجى إدخال العنوان"),
-  caseFeeId: z
+  caseId: z
     .number({ message: "يرجى اختيار الرسوم" })
     .min(1, "يرجى اختيار الرسوم"),
   amount: z

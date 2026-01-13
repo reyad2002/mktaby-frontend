@@ -3,13 +3,11 @@
 import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, CheckCircle, Save } from "lucide-react";
-import toast from "react-hot-toast";
 
-import { fetchTaskByIdApi, updateTaskApi } from "../apis/tasksApis";
-import { fetchUsers } from "@/features/users/apis/usersApi";
-import { getCases } from "@/features/cases/apis/casesApis";
+import { useTaskById, useUpdateTask } from "../hooks/tasksHooks";
+import { useUsers } from "@/features/users/hooks/usersHooks";
+import { useCases } from "@/features/cases/hooks/caseHooks";
 import {
   updateTaskSchema,
   type UpdateTaskFormData,
@@ -55,28 +53,19 @@ export default function EditTaskForm({
   onSuccess,
   onCancel,
 }: EditTaskFormProps) {
-  const queryClient = useQueryClient();
-
-  // Fetch task details
-  const { data: taskData, isLoading: isLoadingTask } = useQuery({
-    queryKey: ["task", taskId],
-    queryFn: () => fetchTaskByIdApi(taskId),
-    enabled: !!taskId,
-  });
+  // Fetch task details using hook
+  const { data: taskData, isLoading: isLoadingTask } = useTaskById(taskId);
   const task = taskData?.data?.data;
 
-  // Fetch users for dropdown
-  const { data: usersData } = useQuery({
-    queryKey: ["users", { pageSize: 100 }],
-    queryFn: () => fetchUsers({ pageSize: 100 }),
-  });
+  // Update task mutation using hook
+  const mutation = useUpdateTask();
+
+  // Fetch users for dropdown using hook
+  const { data: usersData } = useUsers({ pageSize: 100 });
   const users = usersData?.data?.data ?? [];
 
-  // Fetch cases for entity linking
-  const { data: casesData } = useQuery({
-    queryKey: ["cases", { PageSize: 100 }],
-    queryFn: () => getCases({ PageSize: 100 }),
-  });
+  // Fetch cases for entity linking using hook
+  const { data: casesData } = useCases({ PageSize: 100 });
   const cases = casesData?.data?.data ?? [];
 
   const {
@@ -122,37 +111,6 @@ export default function EditTaskForm({
     }
   }, [task, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: UpdateTaskRequest) => updateTaskApi(taskId, data),
-    onSuccess: (response) => {
-      if (response?.data?.succeeded) {
-        toast.success(response.data.message || "تم تحديث المهمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] });
-        onSuccess?.();
-      } else {
-        toast.error(response?.data?.message || "تعذر تحديث المهمة");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      console.error("Update task error:", err?.response?.data);
-
-      if (err?.response?.data?.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat();
-        errorMessages.forEach((msg) => toast.error(msg));
-      } else {
-        toast.error(
-          err?.response?.data?.message || "حدث خطأ أثناء تحديث المهمة"
-        );
-      }
-    },
-  });
-
   const onSubmit = (data: UpdateTaskFormData) => {
     const payload: UpdateTaskRequest = {
       title: data.title,
@@ -165,7 +123,16 @@ export default function EditTaskForm({
       recurringEvery: data.recurringEvery,
       users: data.users,
     };
-    mutation.mutate(payload);
+    mutation.mutate(
+      { id: taskId, data: payload },
+      {
+        onSuccess: (response) => {
+          if (response?.data?.succeeded) {
+            onSuccess?.();
+          }
+        },
+      }
+    );
   };
 
   const toggleUser = (userId: number) => {

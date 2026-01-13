@@ -18,6 +18,7 @@ interface Props {
   paymentId: number;
   onSuccess?: () => void;
   onCancel?: () => void;
+  defaultCaseId?: number;
 }
 
 const PAYMENT_METHODS = [
@@ -38,6 +39,7 @@ export default function EditFeePaymentForm({
   paymentId,
   onSuccess,
   onCancel,
+  defaultCaseId,
 }: Props) {
   const {
     register,
@@ -68,7 +70,8 @@ export default function EditFeePaymentForm({
     if (paymentData) {
       const payment = paymentData;
       reset({
-        caseFeeId: payment.caseFeeId,
+        title: payment.title || "",
+        caseId: payment.caseId,
         amount: payment.amount,
         paymentDate: payment.paymentDate?.split("T")[0] || "",
         paymentMethod: payment.paymentMethod,
@@ -96,7 +99,17 @@ export default function EditFeePaymentForm({
   });
 
   const onSubmit = (data: UpdateFeePaymentFormData) => {
-    mutation.mutate(data);
+    // Transform dates to ISO format to match API requirements
+    const payload = {
+      title: data.title,
+      caseId: data.caseId,
+      amount: data.amount,
+      paymentDate: new Date(data.paymentDate).toISOString(),
+      paymentMethod: data.paymentMethod,
+      dueDate: new Date(data.dueDate).toISOString(),
+      status: data.status,
+    };
+    mutation.mutate(payload);
   };
 
   if (isLoading) {
@@ -109,40 +122,56 @@ export default function EditFeePaymentForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Case Fee */}
+      {/* Title */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          الرسوم <span className="text-red-500">*</span>
+          العنوان <span className="text-red-500">*</span>
         </label>
-        <Controller
-          name="caseFeeId"
-          control={control}
-          render={({ field }) => (
-            <select
-              {...field}
-              value={field.value || ""}
-              onChange={(e) =>
-                field.onChange(
-                  e.target.value ? Number(e.target.value) : undefined
-                )
-              }
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-            >
-              <option value="">اختر الرسوم</option>
-              {fees.map((fee) => (
-                <option key={fee.id} value={fee.id}>
-                  رسوم #{fee.id} - {fee.amount} جنيه
-                </option>
-              ))}
-            </select>
-          )}
+        <input
+          type="text"
+          {...register("title")}
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+          placeholder="مثال: دفعة أولى - رسوم القضية"
         />
-        {errors.caseFeeId && (
-          <p className="text-red-600 text-sm mt-1">
-            {errors.caseFeeId.message}
-          </p>
+        {errors.title && (
+          <p className="text-red-600 text-sm mt-1">{errors.title.message}</p>
         )}
       </div>
+
+      {/* Case Fee - Hidden if defaultCaseId is provided */}
+      {!defaultCaseId && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            الرسوم <span className="text-red-500">*</span>
+          </label>
+          <Controller
+            name="caseId"
+            control={control}
+            render={({ field }) => (
+              <select
+                {...field}
+                value={field.value || ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+              >
+                <option value="">اختر الرسوم</option>
+                {fees.map((fee) => (
+                  <option key={fee.id} value={fee.id}>
+                    رسوم #{fee.id} - {fee.amount} جنيه
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {errors.caseId && (
+            <p className="text-red-600 text-sm mt-1">{errors.caseId.message}</p>
+          )}
+        </div>
+      )}
 
       {/* Amount & Payment Method */}
       <div className="grid grid-cols-2 gap-3">

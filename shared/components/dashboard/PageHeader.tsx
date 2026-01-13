@@ -1,6 +1,9 @@
+"use client";
+
 import React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Loader2, RefreshCcw, Plus } from "lucide-react";
+import { Loader2, RefreshCcw, Plus, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface PageHeaderAction {
   label: string;
@@ -21,6 +24,12 @@ interface PageHeaderProps {
   addButtonLabel?: string;
   customActions?: PageHeaderAction[];
   children?: React.ReactNode;
+  /** Show back button */
+  showBackButton?: boolean;
+  /** Custom back button handler */
+  onBack?: () => void;
+  /** Fallback URL when there's no history */
+  backFallbackUrl?: string;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
@@ -34,16 +43,43 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   addButtonLabel = "إضافة جديد",
   customActions = [],
   children,
+  showBackButton = false,
+  onBack,
+  backFallbackUrl = "/dashboard",
 }) => {
+  const router = useRouter();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(backFallbackUrl);
+    }
+  };
+
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 transition-all duration-300">
       {/* Background Decor - لمسة جمالية خلفية */}
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-      
+
       <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-        
         {/* Title & Info Section */}
         <div className="flex items-start md:items-center gap-5">
+          {/* Back Button */}
+          {showBackButton && (
+            <button
+              onClick={handleBack}
+              className="flex items-center justify-center w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 shrink-0"
+              title="رجوع"
+            >
+              <ArrowRight size={20} />
+            </button>
+          )}
+
           <div className="relative shrink-0">
             <div className="relative z-10 w-14 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 transition-transform duration-300 hover:scale-105">
               <Icon className="text-white" size={28} strokeWidth={2.2} />
@@ -73,13 +109,14 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 
         {/* Actions Section */}
         <div className="flex flex-wrap items-center gap-3">
-          
           {/* Status Chips */}
           <div className="flex items-center gap-2">
             {isFetching && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100/50">
                 <Loader2 size={14} className="animate-spin text-blue-500" />
-                <span className="text-xs font-bold uppercase tracking-wide">جاري التحديث</span>
+                <span className="text-xs font-bold uppercase tracking-wide">
+                  جاري التحديث
+                </span>
               </div>
             )}
             {children}
@@ -99,9 +136,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 disabled={isFetching}
                 className="group flex items-center justify-center w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-primary hover:border-primary/30 transition-all duration-200 active:scale-90 disabled:opacity-40"
               >
-                <RefreshCcw 
-                  size={20} 
-                  className={`${isFetching ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} 
+                <RefreshCcw
+                  size={20}
+                  className={`${
+                    isFetching
+                      ? "animate-spin"
+                      : "group-hover:rotate-180 transition-transform duration-500"
+                  }`}
                 />
               </button>
             )}
@@ -109,9 +150,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             {customActions.map((action, index) => {
               const ActionIcon = action.icon;
               const variants = {
-                primary: "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200",
-                ghost: "border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                primary:
+                  "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200",
+                ghost:
+                  "border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200",
               };
 
               return (
@@ -119,7 +162,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                   key={index}
                   onClick={action.onClick}
                   disabled={action.disabled}
-                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95 disabled:opacity-50 ${variants[action.variant || "secondary"]}`}
+                  className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 active:scale-95 disabled:opacity-50 ${
+                    variants[action.variant || "secondary"]
+                  }`}
                 >
                   {ActionIcon && <ActionIcon size={18} />}
                   {action.label}

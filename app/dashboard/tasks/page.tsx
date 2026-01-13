@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   CheckSquare,
@@ -24,15 +23,14 @@ import {
   Eye,
   FileText,
   Calendar,
-  User,
+  Check,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  fetchTasksApi,
-  softDeleteTaskApi,
-  fetchTaskDashboardApi,
-} from "@/features/tasks/apis/tasksApis";
+  useTasks,
+  useSoftDeleteTask,
+  useTaskDashboard,
+} from "@/features/tasks/hooks/tasksHooks";
 import AddTaskForm from "@/features/tasks/components/AddTaskForm";
 import EditTaskForm from "@/features/tasks/components/EditTaskForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
@@ -87,6 +85,146 @@ function useLockBodyScroll(locked: boolean) {
       document.body.style.overflow = original;
     };
   }, [locked]);
+}
+
+type Opt = { label: string; value: string | number };
+type CustomSelectProps = {
+  label: string;
+  value: string | number | "";
+  options: Opt[];
+  placeholder?: string;
+  onChange: (val: string | number | "") => void;
+};
+
+function OptionRow({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-gray-700 hover:bg-gray-100/70"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check size={16} className="shrink-0" />}
+    </button>
+  );
+}
+
+function CustomSelect({
+  label,
+  value,
+  options,
+  placeholder = "الكل",
+  onChange,
+}: CustomSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => String(o.value) === String(value));
+  const shownLabel =
+    value === "" ? placeholder : selected?.label ?? placeholder;
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    if (!qq) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(qq));
+  }, [q, options]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative" dir="rtl">
+      <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
+          open
+            ? "bg-white border-primary/40 ring-4 ring-primary/10"
+            : "bg-gray-50/60 border-gray-200 hover:bg-white"
+        }`}
+      >
+        <span className="text-gray-800 font-bold truncate">{shownLabel}</span>
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)] overflow-hidden">
+          <div className="p-3 border-b border-gray-100">
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none">
+                <Search size={16} />
+              </div>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ابحث..."
+                className="w-full pr-9 pl-3 py-2.5 rounded-2xl bg-gray-50/70 border border-gray-200 text-sm font-semibold text-gray-700 placeholder:text-gray-400 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-auto p-2">
+            <OptionRow
+              active={value === ""}
+              label={placeholder}
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQ("");
+              }}
+            />
+
+            {filtered.map((o) => (
+              <OptionRow
+                key={String(o.value)}
+                active={String(value) === String(o.value)}
+                label={o.label}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQ("");
+                }}
+              />
+            ))}
+
+            {filtered.length === 0 && (
+              <div className="p-4 text-sm font-bold text-gray-500 text-center">
+                لا توجد نتائج
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ModalShell({
@@ -226,71 +364,30 @@ function EmptyState() {
   );
 }
 
-function Pill({
-  icon: Icon,
-  text,
-  className = "",
-}: {
-  icon?: LucideIcon;
-  text: string;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border ${className}`}
-    >
-      {Icon ? <Icon size={12} /> : null}
-      {text}
-    </span>
-  );
-}
-
 export default function TasksPage() {
   const [filters, setFilters] = useState<GetTasksQuery>(DEFAULT_FILTERS);
+
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
+
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskDto | null>(null);
 
-  useLockBodyScroll(showAddTaskModal || showEditModal || showViewModal);
+  // ✅ Same "Sessions / Cases UI": make filters a dropdown (only Search stays visible)
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  const queryClient = useQueryClient();
+  useLockBodyScroll(showAddTaskModal || showEditModal || showViewModal || moreOpen);
 
-  // Dashboard Stats
   const {
     data: dashboardData,
     isFetching: isFetchingDashboard,
     refetch: refetchDashboard,
-  } = useQuery({
-    queryKey: ["taskDashboard"],
-    queryFn: () => fetchTaskDashboardApi(),
-    staleTime: 10_000,
-  });
+  } = useTaskDashboard();
 
   const dashboard = dashboardData?.data;
 
-  // Soft delete
-  const softDeleteMutation = useMutation({
-    mutationFn: softDeleteTaskApi,
-    onSuccess: (response) => {
-      if (response?.data?.succeeded) {
-        toast.success(response.data.message || "تم أرشفة المهمة بنجاح");
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["taskDashboard"] });
-      } else {
-        toast.error(response?.data?.message || "تعذر أرشفة المهمة");
-      }
-    },
-    onError: (error: unknown) => {
-      const err = error as {
-        response?: {
-          data?: { message?: string; errors?: Record<string, string[]> };
-        };
-      };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء أرشفة المهمة");
-    },
-  });
+  const softDeleteMutation = useSoftDeleteTask();
 
   const handleSoftDelete = (id: number, title: string) => {
     if (
@@ -311,12 +408,8 @@ export default function TasksPage() {
     } satisfies GetTasksQuery;
   }, [filters]);
 
-  // Tasks list
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ["tasks", queryParams],
-    queryFn: () => fetchTasksApi(queryParams),
-    staleTime: 10_000,
-  });
+  const { data, isLoading, isError, error, isFetching, refetch } =
+    useTasks(queryParams);
 
   const tasks: TaskDto[] = data?.data?.data?.data ?? [];
   const totalCount = data?.data?.data?.count ?? 0;
@@ -385,6 +478,21 @@ export default function TasksPage() {
     return icons[priority] || <Flag size={12} />;
   };
 
+  const priorityOptions: Opt[] = useMemo(
+    () => PRIORITY_OPTIONS.map((p) => ({ label: p.label, value: p.value })),
+    []
+  );
+
+  const statusOptions: Opt[] = useMemo(
+    () => STATUS_OPTIONS.map((s) => ({ label: s.label, value: s.value })),
+    []
+  );
+
+  const sortOptions: Opt[] = useMemo(
+    () => SORT_OPTIONS.map((s) => ({ label: s.label, value: s.value })),
+    []
+  );
+
   return (
     <section className="space-y-6 relative">
       {/* Soft premium background */}
@@ -405,323 +513,202 @@ export default function TasksPage() {
         addButtonLabel="مهمة جديدة"
       />
 
-      {/* Dashboard Stats (Premium cards) */}
-      {/* {dashboard && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            {
-              label: "إجمالي المهام",
-              value: dashboard.totalTasks,
-              icon: CheckSquare,
-              tone: "blue",
-            },
-            {
-              label: "مكتملة",
-              value: dashboard.completedTasks,
-              icon: CheckCircle,
-              tone: "green",
-            },
-            {
-              label: "غير مكتملة",
-              value: dashboard.uncompletedTasks,
-              icon: Clock,
-              tone: "orange",
-            },
-            {
-              label: "متأخرة",
-              value: dashboard.overdueTasks,
-              icon: AlertCircle,
-              tone: "red",
-            },
-          ].map((card, idx) => {
-            const tones: Record<
-              string,
-              { bg: string; border: string; iconBg: string; iconText: string }
-            > = {
-              blue: {
-                bg: "bg-white/90",
-                border: "border-gray-200/70",
-                iconBg: "from-blue-50 to-indigo-50",
-                iconText: "text-blue-700",
-              },
-              green: {
-                bg: "bg-white/90",
-                border: "border-gray-200/70",
-                iconBg: "from-emerald-50 to-teal-50",
-                iconText: "text-emerald-700",
-              },
-              orange: {
-                bg: "bg-white/90",
-                border: "border-gray-200/70",
-                iconBg: "from-orange-50 to-amber-50",
-                iconText: "text-orange-700",
-              },
-              red: {
-                bg: "bg-white/90",
-                border: "border-gray-200/70",
-                iconBg: "from-red-50 to-rose-50",
-                iconText: "text-red-700",
-              },
-            };
+      {/* ✅ NEW: same Sessions/Cases layout (Search + Filters Dropdown + Status Segmented) */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+          {/* Search (visible) */}
+          <div className="lg:col-span-9">
+            <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+              بحث
+            </label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
+                <Search size={20} />
+              </div>
+              <input
+                type="text"
+                value={filters.search ?? ""}
+                onChange={(e) => updateFilter("search", e.target.value)}
+                placeholder="ابحث بالعنوان..."
+                className="w-full pr-12 pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all shadow-sm"
+              />
+            </div>
+          </div>
 
-            const t = tones[card.tone];
-            const Icon = card.icon;
+          {/* Filters dropdown button */}
+          <div className="lg:col-span-3 relative">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((p) => !p)}
+              className={`w-full h-13 flex items-center justify-between gap-3 px-5 rounded-2xl border font-extrabold transition-all ${
+                moreOpen
+                  ? "bg-white border-primary/40 ring-4 ring-primary/10"
+                  : "bg-gray-50/50 border-gray-200 hover:bg-white"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-gray-700">
+                <SlidersHorizontal size={18} className="text-primary" />
+                الفلاتر
+              </span>
+              <ChevronDown
+                size={18}
+                className={`transition-transform ${moreOpen ? "rotate-180" : ""}`}
+              />
+            </button>
 
-            return (
-              <div
-                key={idx}
-                className={[
-                  "rounded-2xl border backdrop-blur",
-                  t.bg,
-                  t.border,
-                  "shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50",
-                  "p-4 transition-all hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.45)]",
-                ].join(" ")}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={[
-                      "w-11 h-11 rounded-2xl border border-gray-200/70 shadow-sm",
-                      "bg-linear-to-br",
-                      t.iconBg,
-                      "flex items-center justify-center",
-                    ].join(" ")}
-                  >
-                    <Icon className={t.iconText} size={18} />
-                  </div>
+            {moreOpen && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
 
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-600">{card.label}</p>
-                    <p className="text-2xl font-semibold text-gray-900">
-                      {card.value}
-                    </p>
-                  </div>
+                <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)]">
+                  <div className="p-5 grid grid-cols-1 gap-5">
+                    {/* Page size */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        عدد النتائج
+                      </label>
+                      <div className="inline-flex p-1.5 bg-gray-100/80 rounded-2xl">
+                        {[5, 10, 20, 50].map((size) => {
+                          const active = pageSize === size;
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => updateFilter("pageSize", size)}
+                              className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
+                                active
+                                  ? "bg-white text-primary shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                  <div className="ml-auto flex items-center gap-2">
+                    <CustomSelect
+                      label="الأولوية"
+                      value={String(filters.priority || "")}
+                      options={priorityOptions}
+                      placeholder="الكل"
+                      onChange={(val) =>
+                        updateFilter(
+                          "priority",
+                          val === "" ? undefined : (String(val) as TaskPriority)
+                        )
+                      }
+                    />
+
+                    {/* Single-select status (same behavior as your select) */}
+                    <CustomSelect
+                      label="الحالة"
+                      value={String(filters.statuses?.[0] || "")}
+                      options={statusOptions}
+                      placeholder="الكل"
+                      onChange={(val) =>
+                        updateFilter(
+                          "statuses",
+                          val === "" ? undefined : [String(val) as TaskStatus]
+                        )
+                      }
+                    />
+
+                    <CustomSelect
+                      label="الترتيب"
+                      value={String(filters.sort || "")}
+                      options={sortOptions}
+                      placeholder="بدون ترتيب"
+                      onChange={(val) => updateFilter("sort", String(val || ""))}
+                    />
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-red-500 bg-red-50 hover:bg-red-100"
+                      >
+                        إعادة ضبط
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      >
+                        تم
+                      </button>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => {
                         refetchDashboard();
                         refetch();
                       }}
-                      className="inline-flex items-center gap-2 px-2.5 py-2 text-xs rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
-                      title="تحديث"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
                     >
                       <RefreshCw
-                        size={14}
-                        className={isFetchingDashboard ? "animate-spin" : ""}
+                        size={16}
+                        className={
+                          isFetching || isFetchingDashboard ? "animate-spin" : ""
+                        }
                       />
-                      تحديث
+                      تحديث النتائج
                     </button>
+
+                    {isError && (
+                      <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-2xl font-bold">
+                        <Info size={16} />
+                        حدث خطأ: {error instanceof Error ? error.message : "—"}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )} */}
-
-      {/* Filters (Cases UI) */}
-      <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
-        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
-          <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-500" />
-
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
-              <SlidersHorizontal size={16} className="text-blue-700" />
-            </span>
-            البحث والفلترة
-            <span className="text-gray-500 font-normal">
-              • {totalCount} نتيجة
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <RefreshCw
-                size={16}
-                className={isFetching ? "animate-spin" : ""}
-              />
-              تحديث
-            </button>
-
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 bg-white"
-            >
-              إعادة ضبط
-            </button>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="p-4 sm:p-5">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            {/* Search */}
-            <div className="lg:col-span-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                بحث
-              </label>
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={filters.search ?? ""}
-                  onChange={(e) => updateFilter("search", e.target.value)}
-                  placeholder="ابحث بالعنوان..."
-                  className="w-full pr-9 pl-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300"
-                />
-              </div>
-            </div>
+        {/* Deleted toggle (segment like Sessions) */}
+        <div className="mt-6">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            حالة السجلات
+          </label>
+          <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
+            {[
+              { key: "active", label: "النشطة", icon: CheckSquare, tone: "primary" },
+              { key: "deleted", label: "المؤرشفة", icon: Archive, tone: "red" },
+            ].map((opt) => {
+              const active =
+                (opt.key === "active" && !filters.isDeleted) ||
+                (opt.key === "deleted" && !!filters.isDeleted);
 
-            {/* Priority */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الأولوية
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.priority || ""}
-                  onChange={(e) =>
-                    updateFilter(
-                      "priority",
-                      (e.target.value as TaskPriority) || undefined
-                    )
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() =>
+                    updateFilter("isDeleted", opt.key === "deleted")
                   }
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                    active
+                      ? opt.tone === "red"
+                        ? "bg-red-500 text-white"
+                        : "bg-primary text-white"
+                      : "text-gray-500 hover:bg-gray-200/50"
+                  }`}
                 >
-                  <option value="">الكل</option>
-                  {PRIORITY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الحالة
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.statuses?.[0] || ""}
-                  onChange={(e) =>
-                    updateFilter(
-                      "statuses",
-                      e.target.value
-                        ? [e.target.value as TaskStatus]
-                        : undefined
-                    )
-                  }
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  <option value="">الكل</option>
-                  {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Sort */}
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الترتيب
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.sort || ""}
-                  onChange={(e) => updateFilter("sort", e.target.value)}
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Page size + Deleted toggle */}
-            <div className="lg:col-span-12">
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-gray-600">عدد العناصر:</span>
-                  {[5, 10, 20, 50].map((size) => {
-                    const active = pageSize === size;
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => updateFilter("pageSize", size)}
-                        className={`px-3 py-2 text-sm rounded-xl transition-all border ${
-                          active
-                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-2">
-                  {[
-                    { value: false, label: "نشط" },
-                    { value: true, label: "محذوف" },
-                  ].map((opt) => {
-                    const active = filters.isDeleted === opt.value;
-                    return (
-                      <button
-                        key={String(opt.value)}
-                        type="button"
-                        onClick={() => updateFilter("isDeleted", opt.value)}
-                        className={`rounded-xl px-4 py-2 text-sm transition-all border ${
-                          active
-                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {isError && (
-                  <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-                    <Info size={16} />
-                    حدث خطأ: {error instanceof Error ? error.message : ""}
-                  </div>
-                )}
-              </div>
-            </div>
+                  <opt.icon size={16} />
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -758,7 +745,6 @@ export default function TasksPage() {
                       index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
                     } hover:bg-linear-to-r hover:from-blue-50/60 hover:to-transparent`}
                   >
-                    {/* Title */}
                     <td className="px-4 py-4 min-w-[280px]">
                       <div className="flex items-start gap-3">
                         <span className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
@@ -779,7 +765,6 @@ export default function TasksPage() {
                       </div>
                     </td>
 
-                    {/* Priority */}
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${getPriorityColor(
@@ -791,7 +776,6 @@ export default function TasksPage() {
                       </span>
                     </td>
 
-                    {/* Status */}
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${getStatusColor(
@@ -803,7 +787,6 @@ export default function TasksPage() {
                       </span>
                     </td>
 
-                    {/* Due Date */}
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className="text-gray-700">
                         {task.dueDate
@@ -812,7 +795,6 @@ export default function TasksPage() {
                       </span>
                     </td>
 
-                    {/* Created */}
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className="text-gray-700">
                         {task.createdAt
@@ -821,7 +803,6 @@ export default function TasksPage() {
                       </span>
                     </td>
 
-                    {/* Actions */}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <IconButton
@@ -833,7 +814,6 @@ export default function TasksPage() {
                           }}
                         >
                           <Eye size={14} />
-                          
                         </IconButton>
 
                         <IconButton
@@ -852,9 +832,7 @@ export default function TasksPage() {
                             title="أرشفة"
                             variant="red"
                             disabled={softDeleteMutation.isPending}
-                            onClick={() =>
-                              handleSoftDelete(task.id, task.title)
-                            }
+                            onClick={() => handleSoftDelete(task.id, task.title)}
                           >
                             {softDeleteMutation.isPending ? (
                               <Loader2 size={16} className="animate-spin" />
@@ -974,7 +952,6 @@ export default function TasksPage() {
           }}
         >
           <div className="space-y-6">
-            {/* Title */}
             <div className="rounded-xl border border-gray-200 bg-linear-to-br from-blue-50 to-white p-4">
               <div className="flex items-start gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-100 border border-blue-200">
@@ -992,7 +969,6 @@ export default function TasksPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Priority */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -1009,7 +985,6 @@ export default function TasksPage() {
                 </div>
               </div>
 
-              {/* Status */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -1028,7 +1003,6 @@ export default function TasksPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Due Date */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -1042,11 +1016,7 @@ export default function TasksPage() {
                       {selectedTask.dueDate
                         ? new Date(selectedTask.dueDate).toLocaleDateString(
                             "ar-EG",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
+                            { year: "numeric", month: "long", day: "numeric" }
                           )
                         : "—"}
                     </div>
@@ -1054,7 +1024,6 @@ export default function TasksPage() {
                 </div>
               </div>
 
-              {/* Created Date */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -1068,11 +1037,7 @@ export default function TasksPage() {
                       {selectedTask.createdAt
                         ? new Date(selectedTask.createdAt).toLocaleDateString(
                             "ar-EG",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
+                            { year: "numeric", month: "long", day: "numeric" }
                           )
                         : "—"}
                     </div>
@@ -1081,26 +1046,6 @@ export default function TasksPage() {
               </div>
             </div>
 
-            {/* Assigned To */}
-            {/* {selectedTask.assignedTo && (
-              <div className="rounded-xl border border-gray-200 bg-linear-to-br from-indigo-50 to-white p-4">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200">
-                    <User size={18} className="text-indigo-700" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-gray-600 mb-1">
-                      مُسند إلى
-                    </div>
-                    <div className="text-sm font-semibold text-gray-900">
-                      {selectedTask.assignedTo}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )} */}
-
-            {/* Description */}
             {selectedTask.description && (
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
@@ -1119,7 +1064,6 @@ export default function TasksPage() {
               </div>
             )}
 
-            {/* Task ID */}
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
               <div className="text-xs text-gray-600">
                 معرّف المهمة:{" "}

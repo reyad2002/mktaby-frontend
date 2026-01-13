@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
@@ -23,15 +22,16 @@ import {
   Info,
   Eye,
   FileText,
+  CheckCircle2,
+  Check,
 } from "lucide-react";
-import toast from "react-hot-toast";
 
 import {
-  fetchSessionsList,
-  fetchSessionTypes,
-  fetchSessionStatuses,
-  softDeleteSession,
-} from "@/features/sessions/apis/sessionsApis";
+  useSessions,
+  useSessionTypes,
+  useSessionStatuses,
+  useSoftDeleteSession,
+} from "@/features/sessions/hooks/sessionsHooks";
 import AddSessionForm from "@/features/sessions/components/AddSessionForm";
 import EditSessionForm from "@/features/sessions/components/EditSessionForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
@@ -52,7 +52,7 @@ const DEFAULT_FILTERS: GetSessionsQuery = {
   IsDeleted: false,
 };
 
-const SORT_OPTIONS = [
+const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "بدون ترتيب" },
   { value: "sessionDate desc", label: "التاريخ (الأحدث)" },
   { value: "sessionDate asc", label: "التاريخ (الأقدم)" },
@@ -69,6 +69,147 @@ function useLockBodyScroll(locked: boolean) {
       document.body.style.overflow = original;
     };
   }, [locked]);
+}
+
+type Opt = { label: string; value: string | number };
+
+type CustomSelectProps = {
+  label: string;
+  value: string | number | "";
+  options: Opt[];
+  placeholder?: string;
+  onChange: (val: string | number | "") => void;
+};
+
+function CustomSelect({
+  label,
+  value,
+  options,
+  placeholder = "الكل",
+  onChange,
+}: CustomSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => String(o.value) === String(value));
+  const shownLabel =
+    value === "" ? placeholder : selected?.label ?? placeholder;
+
+  const filtered = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    if (!qq) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(qq));
+  }, [q, options]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative" dir="rtl">
+      <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+        {label}
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
+          open
+            ? "bg-white border-primary/40 ring-4 ring-primary/10"
+            : "bg-gray-50/60 border-gray-200 hover:bg-white"
+        }`}
+      >
+        <span className="text-gray-800 font-bold truncate">{shownLabel}</span>
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)] overflow-hidden">
+          <div className="p-3 border-b border-gray-100">
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 pointer-events-none">
+                <Search size={16} />
+              </div>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ابحث..."
+                className="w-full pr-9 pl-3 py-2.5 rounded-2xl bg-gray-50/70 border border-gray-200 text-sm font-semibold text-gray-700 placeholder:text-gray-400 outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 appearance-none"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-auto p-2">
+            <OptionRow
+              active={value === ""}
+              label={placeholder}
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQ("");
+              }}
+            />
+
+            {filtered.map((o) => (
+              <OptionRow
+                key={String(o.value)}
+                active={String(value) === String(o.value)}
+                label={o.label}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                  setQ("");
+                }}
+              />
+            ))}
+
+            {filtered.length === 0 && (
+              <div className="p-4 text-sm font-bold text-gray-500 text-center">
+                لا توجد نتائج
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OptionRow({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-gray-700 hover:bg-gray-100/70"
+      }`}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check size={16} className="shrink-0" />}
+    </button>
+  );
 }
 
 function ModalShell({
@@ -242,35 +383,18 @@ export default function SessionsPage() {
   const [showAddSessionModal, setShowAddSessionModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editSessionId, setEditSessionId] = useState<number | null>(null);
+
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedSession, setSelectedSession] =
     useState<SessionListItem | null>(null);
 
+  const [moreOpen, setMoreOpen] = useState(false);
+
   useLockBodyScroll(showAddSessionModal || showEditModal || showViewModal);
 
-  const queryClient = useQueryClient();
-
-  const { data: sessionTypes = [] } = useQuery({
-    queryKey: ["sessionTypes"],
-    queryFn: fetchSessionTypes,
-  });
-
-  const { data: sessionStatuses = [] } = useQuery({
-    queryKey: ["sessionStatuses"],
-    queryFn: fetchSessionStatuses,
-  });
-
-  const softDeleteMutation = useMutation({
-    mutationFn: softDeleteSession,
-    onSuccess: () => {
-      toast.success("تم حذف الجلسة بنجاح");
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء حذف الجلسة");
-    },
-  });
+  const { data: sessionTypes = [] } = useSessionTypes();
+  const { data: sessionStatuses = [] } = useSessionStatuses();
+  const softDeleteMutation = useSoftDeleteSession();
 
   const handleSoftDelete = (id: number, caseName: string) => {
     if (window.confirm(`هل تريد حذف جلسة القضية "${caseName}"؟`)) {
@@ -289,11 +413,8 @@ export default function SessionsPage() {
     } satisfies GetSessionsQuery;
   }, [filters]);
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ["sessions", queryParams],
-    queryFn: () => fetchSessionsList(queryParams),
-    staleTime: 10_000,
-  });
+  const { data, isLoading, isError, error, isFetching, refetch } =
+    useSessions(queryParams);
 
   const sessions: SessionListItem[] = data?.data?.data ?? [];
   const totalCount = data?.data?.count ?? 0;
@@ -320,7 +441,6 @@ export default function SessionsPage() {
 
   const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
-  // White-theme pills
   const getStatusPillClass = (status: string) => {
     const colors: Record<string, string> = {
       Scheduled: "bg-blue-50 text-blue-700 border-blue-200",
@@ -355,224 +475,251 @@ export default function SessionsPage() {
     return colors[type] || "bg-gray-50 text-gray-700 border-gray-200";
   };
 
+  const sessionTypeOptions: Opt[] = useMemo(
+    () => sessionTypes.map((t) => ({ label: t.label, value: t.value })),
+    [sessionTypes]
+  );
+  const sessionStatusOptions: Opt[] = useMemo(
+    () => sessionStatuses.map((s) => ({ label: s.label, value: s.value })),
+    [sessionStatuses]
+  );
+
   return (
     <section className="space-y-6 relative">
       {/* Soft premium background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-white" />
+        <div className="absolute inset-0 bg-linear-to-b from-slate-50 via-white to-white" />
       </div>
 
       <PageHeader
         title="الجلسات"
         subtitle="إدارة ومتابعة جلسات القضايا والمواعيد."
         icon={CalendarDays}
+        isFetching={isFetching}
         countLabel={`${totalCount} جلسة`}
         onAdd={() => setShowAddSessionModal(true)}
         addButtonLabel="إضافة جلسة"
-        isFetching={isFetching}
       />
 
-      {/* Filters (Cases UI) */}
-      <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200/70 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50 overflow-hidden">
-        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 relative">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500" />
-
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
-              <SlidersHorizontal size={16} className="text-blue-700" />
-            </span>
-            فلاتر البحث
-            <span className="text-gray-500 font-normal">
-              • {totalCount} نتيجة
-            </span>
+      {/* Main Content Area (Cases UI) */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+          {/* Search Input (ONLY visible filter) */}
+          <div className="lg:col-span-9">
+            <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
+              بحث متقدم
+            </label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
+                <Search size={20} />
+              </div>
+              <input
+                type="text"
+                value={filters.Search ?? ""}
+                onChange={(e) => updateFilter("Search", e.target.value)}
+                placeholder="ابحث بالقضية أو المحكمة..."
+                className="w-full pr-12 pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white transition-all shadow-sm"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Filters Dropdown Button */}
+          <div className="lg:col-span-3 relative">
             <button
               type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={() => setMoreOpen((p) => !p)}
+              className={`w-full h-13 flex items-center justify-between gap-3 px-5 rounded-2xl border font-extrabold transition-all ${
+                moreOpen
+                  ? "bg-white border-primary/40 ring-4 ring-primary/10"
+                  : "bg-gray-50/50 border-gray-200 hover:bg-white"
+              }`}
             >
-              <RefreshCw
-                size={16}
-                className={isFetching ? "animate-spin" : ""}
+              <span className="flex items-center gap-2 text-gray-700">
+                <SlidersHorizontal size={18} className="text-primary" />
+                الفلاتر
+              </span>
+              <ChevronDown
+                size={18}
+                className={`transition-transform ${moreOpen ? "rotate-180" : ""}`}
               />
-              تحديث
             </button>
 
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 bg-white"
-            >
-              إعادة ضبط
-            </button>
+            {moreOpen && (
+              <>
+                {/* click away */}
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
+
+                <div className="absolute left-0 right-0 mt-3 z-50 rounded-3xl bg-white/95 backdrop-blur-xl border border-gray-200/70 shadow-[0_30px_70px_-30px_rgba(0,0,0,0.3)]">
+                  <div className="p-5 grid grid-cols-1 gap-5">
+                    {/* Page Size */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        عدد النتائج
+                      </label>
+                      <div className="inline-flex p-1.5 bg-gray-100/80 rounded-2xl">
+                        {[5, 10, 20, 50].map((size) => {
+                          const active = pageSize === size;
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => updateFilter("PageSize", size)}
+                              className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
+                                active
+                                  ? "bg-white text-primary shadow-sm"
+                                  : "text-gray-500 hover:text-gray-700"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Select Filters */}
+                    <CustomSelect
+                      label="نوع الجلسة"
+                      value={String(filters.SessionType || "")}
+                      options={sessionTypeOptions}
+                      placeholder="الكل"
+                      onChange={(val) =>
+                        updateFilter(
+                          "SessionType",
+                          val === "" ? undefined : (String(val) as SessionTypeValue)
+                        )
+                      }
+                    />
+
+                    <CustomSelect
+                      label="حالة الجلسة"
+                      value={String(filters.SessionStatus || "")}
+                      options={sessionStatusOptions}
+                      placeholder="الكل"
+                      onChange={(val) =>
+                        updateFilter(
+                          "SessionStatus",
+                          val === ""
+                            ? undefined
+                            : (String(val) as SessionStatusValue)
+                        )
+                      }
+                    />
+
+                    <CustomSelect
+                      label="ترتيب حسب"
+                      value={String(filters.Sort || "")}
+                      options={SORT_OPTIONS}
+                      placeholder="بدون ترتيب"
+                      onChange={(val) =>
+                        updateFilter("Sort", val === "" ? "" : String(val))
+                      }
+                    />
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-red-500 bg-red-50 hover:bg-red-100"
+                      >
+                        إعادة ضبط
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex-1 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      >
+                        تم
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => refetch()}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-extrabold rounded-2xl text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                    >
+                      <RefreshCw
+                        size={16}
+                        className={isFetching ? "animate-spin" : ""}
+                      />
+                      تحديث النتائج
+                    </button>
+
+                    {isError && (
+                      <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-2xl font-bold">
+                        <Info size={16} />
+                        حدث خطأ: {error instanceof Error ? error.message : "—"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="p-4 sm:p-5">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            {/* Search */}
-            <div className="lg:col-span-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                بحث
-              </label>
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={filters.Search ?? ""}
-                  onChange={(e) => updateFilter("Search", e.target.value)}
-                  placeholder="ابحث بالقضية أو المحكمة..."
-                  className="w-full pr-9 pl-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 bg-white focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300"
-                />
-              </div>
-            </div>
+        {/* Status */}
+        <div className="mt-6">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            حالة السجلات
+          </label>
+          <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl">
+            {[
+              {
+                key: "active",
+                label: "النشطة",
+                icon: CheckCircle2,
+                color: "bg-primary",
+              },
+              {
+                key: "deleted",
+                label: "المحذوفة",
+                icon: Trash2,
+                color: "bg-red-500",
+              },
+            ].map((opt) => {
+              const isActive = opt.key === "active" && !filters.IsDeleted;
+              const isDeleted = opt.key === "deleted" && !!filters.IsDeleted;
+              const active = isActive || isDeleted;
+              const Icon = opt.icon;
 
-            {/* Session Type */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع الجلسة
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.SessionType || ""}
-                  onChange={(e) =>
-                    updateFilter(
-                      "SessionType",
-                      (e.target.value as SessionTypeValue) || undefined
-                    )
-                  }
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => {
+                    if (opt.key === "active") {
+                      setFilters((prev) => ({
+                        ...prev,
+                        IsDeleted: false,
+                        PageNumber: 1,
+                      }));
+                    } else {
+                      setFilters((prev) => ({
+                        ...prev,
+                        IsDeleted: true,
+                        PageNumber: 1,
+                      }));
+                    }
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                    active
+                      ? `${opt.color} text-white`
+                      : "text-gray-500 hover:bg-gray-200/50"
+                  }`}
                 >
-                  <option value="">الكل</option>
-                  {sessionTypes.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Session Status */}
-            <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                حالة الجلسة
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.SessionStatus || ""}
-                  onChange={(e) =>
-                    updateFilter(
-                      "SessionStatus",
-                      (e.target.value as SessionStatusValue) || undefined
-                    )
-                  }
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  <option value="">الكل</option>
-                  {sessionStatuses.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Sort */}
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الترتيب
-              </label>
-              <div className="relative">
-                <select
-                  value={filters.Sort || ""}
-                  onChange={(e) => updateFilter("Sort", e.target.value)}
-                  className="w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Page size */}
-            <div className="lg:col-span-12">
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-gray-600">عدد العناصر:</span>
-                  {[5, 10, 20, 50].map((size) => {
-                    const active = pageSize === size;
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => updateFilter("PageSize", size)}
-                        className={`px-3 py-2 text-sm rounded-xl transition-all border ${
-                          active
-                            ? "bg-blue-50 text-blue-700 border-blue-200 shadow-sm"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-2">
-                  {[
-                    { value: false, label: "نشط" },
-                    { value: true, label: "محذوف" },
-                  ].map((opt) => {
-                    const active = filters.IsDeleted === opt.value;
-                    return (
-                      <button
-                        key={String(opt.value)}
-                        type="button"
-                        onClick={() => updateFilter("IsDeleted", opt.value)}
-                        className={`rounded-xl px-4 py-2 text-sm transition-all border ${
-                          active
-                            ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {isError && (
-                  <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
-                    <Info size={16} />
-                    حدث خطأ: {error instanceof Error ? error.message : ""}
-                  </div>
-                )}
-              </div>
-            </div>
+                  <Icon size={16} />
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -587,41 +734,54 @@ export default function SessionsPage() {
       ) : sessions.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-b from-gray-50 to-white sticky top-0 z-10">
-                <tr className="text-right text-xs font-semibold text-gray-700">
-                  <th className="px-4 py-3 whitespace-nowrap">تاريخ الجلسة</th>
-                  <th className="px-4 py-3 whitespace-nowrap">نوع الجلسة</th>
-                  <th className="px-4 py-3 whitespace-nowrap">حالة الجلسة</th>
-                  <th className="px-4 py-3">القضية</th>
-                  <th className="px-4 py-3">المحكمة</th>
-                  <th className="px-4 py-3 whitespace-nowrap">الإجراءات</th>
+        <div className="overflow-hidden rounded-3xl border border-gray-200/60 bg-white/80 backdrop-blur-xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] ring-1 ring-gray-200/50">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
+            <table className="min-w-full border-separate border-spacing-0">
+              <thead className="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-md">
+                <tr className="text-right text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    تاريخ الجلسة
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    النوع
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    الحالة
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    القضية
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap">
+                    المحكمة
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-100 whitespace-nowrap text-center">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {sessions.map((session, index) => (
+              <tbody className="divide-y divide-gray-50 bg-transparent">
+                {sessions.map((session) => (
                   <tr
                     key={session.id}
-                    className={`text-sm text-gray-800 transition-colors ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50/40"
-                    } hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-transparent`}
+                    className="group transition-all duration-200 hover:bg-primary/2"
                   >
                     {/* Date */}
-                    <td className="px-4 py-4 min-w-[260px]">
+                    <td className="px-6 py-5 whitespace-nowrap min-w-[320px]">
                       {session.sessionDate ? (
-                        <div className="inline-flex items-center gap-3">
-                          <span className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
-                            <Calendar size={16} className="text-blue-700" />
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+                            <Calendar size={18} className="text-blue-700" />
                           </span>
                           <div className="min-w-0">
-                            <div className="font-semibold text-gray-900">
+                            <div className="font-bold text-gray-900 leading-tight">
                               {formatSessionDate(session.sessionDate)}
                             </div>
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              جلسة رقم: {session.id}
+                            <div className="text-xs text-gray-500 mt-1">
+                              جلسة رقم:{" "}
+                              <span className="font-mono font-semibold text-gray-700">
+                                #{session.id}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -631,51 +791,56 @@ export default function SessionsPage() {
                     </td>
 
                     {/* Type */}
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <Pill
-                        icon={Scale}
-                        text={session.sessionType?.label || "—"}
-                        className={getTypePillClass(
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border shadow-sm ${getTypePillClass(
                           session.sessionType?.value || ""
-                        )}
-                      />
+                        )}`}
+                      >
+                        {session.sessionType?.label || "—"}
+                      </span>
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <Pill
-                        text={session.sessionStatus?.label || "—"}
-                        className={getStatusPillClass(
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border shadow-sm ${getStatusPillClass(
                           session.sessionStatus?.value || ""
-                        )}
-                      />
+                        )}`}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                        {session.sessionStatus?.label || "—"}
+                      </span>
                     </td>
 
                     {/* Case */}
-                    <td className="px-4 py-4 min-w-[280px]">
+                    <td className="px-6 py-5 min-w-[320px]">
                       <div className="flex items-start gap-3">
-                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
-                          <Briefcase size={16} className="text-blue-700" />
+                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
+                          <Briefcase size={18} className="text-blue-700" />
                         </span>
 
                         <div className="min-w-0">
                           <div
-                            className="font-semibold text-gray-900 truncate"
+                            className="font-bold text-gray-900 truncate max-w-[520px]"
                             title={session.caseName}
                           >
-                            {session.caseName}
+                            {session.caseName || "—"}
                           </div>
                           <div className="text-xs text-gray-500 mt-1" dir="ltr">
-                            رقم القضية: {session.caseNumber}
+                            رقم القضية:{" "}
+                            <span className="font-mono font-semibold text-gray-700">
+                              {session.caseNumber || "—"}
+                            </span>
                           </div>
                         </div>
                       </div>
                     </td>
 
                     {/* Court */}
-                    <td className="px-4 py-4 min-w-[200px]">
+                    <td className="px-6 py-5 min-w-[220px]">
                       <span
-                        className="text-gray-700 truncate block"
+                        className="text-sm font-medium text-gray-600 truncate block"
                         title={session.court}
                       >
                         {session.court || "—"}
@@ -683,8 +848,8 @@ export default function SessionsPage() {
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-center gap-2">
                         <IconButton
                           title="عرض التفاصيل"
                           variant="blue"
@@ -693,7 +858,7 @@ export default function SessionsPage() {
                             setShowViewModal(true);
                           }}
                         >
-                          <Eye size={14} />
+                          <Eye size={16} strokeWidth={2.5} />
                         </IconButton>
 
                         <IconButton
@@ -704,21 +869,19 @@ export default function SessionsPage() {
                             setShowEditModal(true);
                           }}
                         >
-                          <Edit size={16} />
+                          <Edit size={16} strokeWidth={2.5} />
                         </IconButton>
 
                         <IconButton
                           title="حذف"
                           variant="red"
                           disabled={softDeleteMutation.isPending}
-                          onClick={() =>
-                            handleSoftDelete(session.id, session.caseName)
-                          }
+                          onClick={() => handleSoftDelete(session.id, session.caseName)}
                         >
                           {softDeleteMutation.isPending ? (
                             <Loader2 size={16} className="animate-spin" />
                           ) : (
-                            <Trash2 size={16} />
+                            <Trash2 size={16} strokeWidth={2.5} />
                           )}
                         </IconButton>
                       </div>
@@ -731,53 +894,66 @@ export default function SessionsPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200/70 bg-white/90 backdrop-blur px-4 py-3 text-sm text-gray-600 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)] ring-1 ring-gray-200/50">
-        <div className="flex items-center gap-2">
-          <span>
-            صفحة{" "}
-            <span className="font-semibold text-gray-900">{pageNumber}</span> من{" "}
-            <span className="font-semibold text-gray-900">{totalPages}</span>
-          </span>
-          <span className="text-gray-400">•</span>
-          <span>
-            عرض{" "}
-            <span className="font-semibold text-gray-900">
-              {sessions.length}
-            </span>{" "}
-            من <span className="font-semibold text-gray-900">{totalCount}</span>
-          </span>
+      {/* Pagination (Cases UI) */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-5 rounded-3xl border border-gray-200/60 bg-white/80 backdrop-blur-xl px-6 py-4 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] ring-1 ring-gray-200/50 mt-6">
+        {/* Stats */}
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary shadow-inner">
+            <FileText size={18} />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <div className="text-sm font-medium text-gray-500">
+              صفحة <span className="font-bold text-gray-900">{pageNumber}</span>{" "}
+              من <span className="font-bold text-gray-900">{totalPages}</span>
+            </div>
+            <span className="hidden sm:block h-4 w-px bg-gray-200" />
+            <div className="text-sm font-medium text-gray-500">
+              عرض{" "}
+              <span className="text-primary font-bold">{sessions.length}</span>{" "}
+              من أصل <span className="font-bold text-gray-900">{totalCount}</span>{" "}
+              سجل
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Controls */}
+        <div className="flex items-center gap-3">
           <button
             onClick={() => handlePageChange(pageNumber - 1)}
             disabled={pageNumber <= 1}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-600 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-30 disabled:pointer-events-none active:scale-95 shadow-sm"
           >
-            <ChevronRight size={16} />
+            <ChevronRight
+              size={18}
+              className="transition-transform group-hover:translate-x-1"
+            />
             السابق
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">اذهب إلى</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-primary/30 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tighter">
+              اذهب لـ
+            </span>
             <input
               type="number"
               min={1}
               max={totalPages}
               value={pageNumber}
               onChange={(e) => handlePageChange(Number(e.target.value))}
-              className="w-20 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 focus:outline-none focus:ring-4 focus:ring-blue-200/70 focus:border-blue-300 bg-white"
+              className="w-12 bg-transparent text-center text-sm font-extrabold text-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
           <button
             onClick={() => handlePageChange(pageNumber + 1)}
             disabled={pageNumber >= totalPages}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-600 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary disabled:opacity-30 disabled:pointer-events-none active:scale-95 shadow-sm"
           >
             التالي
-            <ChevronLeft size={16} />
+            <ChevronLeft
+              size={18}
+              className="transition-transform group-hover:-translate-x-1"
+            />
           </button>
         </div>
       </div>
@@ -834,7 +1010,6 @@ export default function SessionsPage() {
           }}
         >
           <div className="space-y-6">
-            {/* Session Date & Time */}
             <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-4">
               <div className="flex items-start gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-100 border border-blue-200">
@@ -854,7 +1029,6 @@ export default function SessionsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Session Type */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -871,7 +1045,6 @@ export default function SessionsPage() {
                 </div>
               </div>
 
-              {/* Session Status */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -889,7 +1062,6 @@ export default function SessionsPage() {
               </div>
             </div>
 
-            {/* Case Details */}
             <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-indigo-50 to-white p-4">
               <div className="flex items-start gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200">
@@ -912,7 +1084,6 @@ export default function SessionsPage() {
               </div>
             </div>
 
-            {/* Court */}
             <div className="rounded-xl border border-gray-200 bg-white p-4">
               <div className="flex items-start gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 border border-gray-200">
@@ -929,7 +1100,6 @@ export default function SessionsPage() {
               </div>
             </div>
 
-            {/* Notes */}
             {selectedSession.notes && (
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-start gap-3">
@@ -948,7 +1118,6 @@ export default function SessionsPage() {
               </div>
             )}
 
-            {/* Session ID */}
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
               <div className="text-xs text-gray-600">
                 معرّف الجلسة:{" "}

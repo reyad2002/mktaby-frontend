@@ -913,6 +913,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
           title="إضافة مصروف جديد"
         >
           <AddCaseExpenseForm
+            defaultCaseId={caseId}
             onSuccess={() => {
               setShowAddExpense(false);
               queryClient.invalidateQueries({ queryKey: ["caseExpenses"] });
@@ -930,6 +931,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
         >
           <EditCaseExpenseForm
             expenseId={showEditExpense.id}
+            defaultCaseId={caseId}
             onSuccess={() => {
               setShowEditExpense(null);
               queryClient.invalidateQueries({ queryKey: ["caseExpenses"] });
@@ -957,6 +959,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
           title="إضافة دفعة جديدة"
         >
           <AddFeePaymentForm
+            defaultCaseId={caseId}
             onSuccess={() => {
               setShowAddPayment(false);
               queryClient.invalidateQueries({ queryKey: ["feePayments"] });
@@ -974,6 +977,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
         >
           <EditFeePaymentForm
             paymentId={showEditPayment.id}
+            defaultCaseId={caseId}
             onSuccess={() => {
               setShowEditPayment(null);
               queryClient.invalidateQueries({ queryKey: ["feePayments"] });

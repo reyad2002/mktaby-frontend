@@ -5,6 +5,10 @@ export { default as ConfirmDialog } from "./ConfirmDialog";
 export { default as PasswordStrength } from "./PasswordStrength";
 export { default as Breadcrumbs } from "./Breadcrumbs";
 export type { BreadcrumbItem } from "./Breadcrumbs";
+export { default as BackButton } from "./BackButton";
+export type { BackButtonProps } from "./BackButton";
+export { default as PageTitleWithBack } from "./PageTitleWithBack";
+export type { PageTitleWithBackProps } from "./PageTitleWithBack";
 export { default as Tooltip } from "./Tooltip";
 export {
   Skeleton,

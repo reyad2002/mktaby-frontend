@@ -14,6 +14,8 @@ import {
   softDeleteCase,
   hardDeleteCase,
   restoreCase,
+  archiveCase,
+  unarchiveCase,
 } from "../apis/casesApis";
 
 import type {
@@ -207,7 +209,7 @@ export function useUpdateCase() {
 }
 
 /**
- * Soft delete (archive) a case
+ * Soft delete a case (moves to trash)
  */
 export function useSoftDeleteCase() {
   const queryClient = useQueryClient();
@@ -216,15 +218,15 @@ export function useSoftDeleteCase() {
     mutationFn: (id: number | string) => softDeleteCase(id),
     onSuccess: (response) => {
       if (response?.succeeded) {
-        toast.success(response.message || "تم أرشفة القضية بنجاح");
+        toast.success(response.message || "تم حذف القضية بنجاح");
         queryClient.invalidateQueries({ queryKey: caseKeys.all });
       } else {
-        toast.error(response?.message || "تعذر أرشفة القضية");
+        toast.error(response?.message || "تعذر حذف القضية");
       }
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء أرشفة القضية");
+      toast.error(err?.response?.data?.message || "حدث خطأ أثناء حذف القضية");
     },
   });
 }
@@ -272,6 +274,54 @@ export function useRestoreCase() {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(
         err?.response?.data?.message || "حدث خطأ أثناء استعادة القضية"
+      );
+    },
+  });
+}
+
+/**
+ * Archive a case
+ */
+export function useArchiveCase() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number | string) => archiveCase(id),
+    onSuccess: (response) => {
+      if (response?.succeeded) {
+        toast.success(response.message || "تم أرشفة القضية بنجاح");
+        queryClient.invalidateQueries({ queryKey: caseKeys.all });
+      } else {
+        toast.error(response?.message || "تعذر أرشفة القضية");
+      }
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err?.response?.data?.message || "حدث خطأ أثناء أرشفة القضية");
+    },
+  });
+}
+
+/**
+ * Unarchive a case
+ */
+export function useUnarchiveCase() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number | string) => unarchiveCase(id),
+    onSuccess: (response) => {
+      if (response?.succeeded) {
+        toast.success(response.message || "تم إلغاء أرشفة القضية بنجاح");
+        queryClient.invalidateQueries({ queryKey: caseKeys.all });
+      } else {
+        toast.error(response?.message || "تعذر إلغاء أرشفة القضية");
+      }
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(
+        err?.response?.data?.message || "حدث خطأ أثناء إلغاء أرشفة القضية"
       );
     },
   });

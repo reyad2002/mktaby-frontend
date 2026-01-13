@@ -18,6 +18,7 @@ import {
   Briefcase,
   IdCard,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackButton } from "@/shared/components/ui";

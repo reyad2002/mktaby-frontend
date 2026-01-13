@@ -67,7 +67,7 @@ export default function EditUserForm({
     try {
       await updateMutation.mutateAsync(formData);
       if (selectedImage) {
-        await imageMutation.mutateAsync({ id: userId, file: selectedImage });
+        await imageMutation.mutateAsync({ id: userId, imageFile: selectedImage });
       }
       onSuccess?.();
     } catch (error) {

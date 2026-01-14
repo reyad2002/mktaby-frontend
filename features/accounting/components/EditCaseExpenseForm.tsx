@@ -71,15 +71,14 @@ export default function EditCaseExpenseForm({
   useEffect(() => {
     if (expenseData) {
       reset({
-        caseId: expenseData.caseId,
-        amount: expenseData.amount,
-        expenseDate: expenseData.expenseDate
-          ? expenseData.expenseDate.split("T")[0]
+        caseId: expenseData?.data?.caseId,
+        amount: expenseData?.data?.amount,
+        expenseDate: expenseData?.data?.expenseDate
+          ? expenseData.data.expenseDate.split("T")[0]
           : "",
       });
     }
   }, [expenseData, reset]);
-
   const mutation = useMutation({
     mutationFn: (data: UpdateCaseExpenseFormData) =>
       updateCaseExpense(expenseId, {

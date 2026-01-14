@@ -8,11 +8,10 @@ import {
   addClient,
   updateClient,
   getClientById,
+  getClientFinance,
+  getAllClientsFinance,
 } from "@/features/clients/apis/clientsApi";
-import type {
-  ClientsQueryParams,
-  ClientSummary,
-} from "@/features/clients/types/clientTypes";
+import type { ClientsQueryParams } from "@/features/clients/types/clientTypes";
 
 // ===========================
 export function useClients(filters: ClientsQueryParams) {
@@ -102,5 +101,28 @@ export function useRestoreClient() {
       toast.success("تم استعادة العميل بنجاح");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
+  });
+}
+
+/**
+ * Fetch finance summary for a specific client
+ */
+export function useClientFinance(clientId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["clientFinance", clientId],
+    queryFn: () => getClientFinance(clientId),
+    enabled: !!clientId && enabled,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Fetch finance summary for all clients
+ */
+export function useAllClientsFinance() {
+  return useQuery({
+    queryKey: ["allClientsFinance"],
+    queryFn: () => getAllClientsFinance(),
+    staleTime: 60_000,
   });
 }

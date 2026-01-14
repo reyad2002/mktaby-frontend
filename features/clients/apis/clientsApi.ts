@@ -10,6 +10,7 @@ import {
   ADD_COMPANY_EMPLOYEE_PATH,
   UPDATE_COMPANY_EMPLOYEE_PATH,
   SOFT_DELETE_EMPLOYEE_PATH,
+  CLIENT_TOTAL_FINANCE_PATH,
 } from "../PATHES";
 import {
   ClientsQueryParams,
@@ -26,6 +27,7 @@ import {
   UpdateCompanyEmployeeRequest,
   UpdateCompanyEmployeeResponse,
   DeleteCompanyEmployeeResponse,
+  GetClientTotalFinanceResponse,
 } from "../types/clientTypes";
 
 // Fetch paginated clients list
@@ -129,6 +131,24 @@ export async function softDeleteEmployee(
 ): Promise<DeleteCompanyEmployeeResponse> {
   const response = await apiClient.delete<DeleteCompanyEmployeeResponse>(
     `${SOFT_DELETE_EMPLOYEE_PATH}/${id}`
+  );
+  return response.data;
+}
+
+// GET finance client
+export async function getClientFinance(
+  clientId: number
+): Promise<GetClientTotalFinanceResponse> {
+  const response = await apiClient.get<GetClientTotalFinanceResponse>(
+    `${CLIENT_TOTAL_FINANCE_PATH}/${clientId}`
+  );
+  return response.data;
+}
+
+// GET all clients finance
+export async function getAllClientsFinance(): Promise<GetClientTotalFinanceResponse> {
+  const response = await apiClient.get<GetClientTotalFinanceResponse>(
+    CLIENT_TOTAL_FINANCE_PATH
   );
   return response.data;
 }

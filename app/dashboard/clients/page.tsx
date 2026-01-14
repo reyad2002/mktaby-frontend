@@ -820,8 +820,8 @@ export default function ClientsPage() {
                         ) : (
                           <>
                             <IconButton
-                              title="أرشفة"
-                              variant="orange"
+                              title="حذف"
+                              variant="red"
                               disabled={softDeleteMutation.isPending}
                               onClick={() =>
                                 handleSoftDelete(client.id, client.name)
@@ -830,12 +830,12 @@ export default function ClientsPage() {
                               {softDeleteMutation.isPending ? (
                                 <Loader2 size={16} className="animate-spin" />
                               ) : (
-                                <Archive size={16} strokeWidth={2.5} />
+                                <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
 
-                            <IconButton
-                              title="حذف"
+                            {/* <IconButton
+                              title="حذف نهائي"
                               variant="red"
                               disabled={hardDeleteMutation.isPending}
                               onClick={() =>
@@ -847,7 +847,7 @@ export default function ClientsPage() {
                               ) : (
                                 <Trash2 size={16} strokeWidth={2.5} />
                               )}
-                            </IconButton>
+                            </IconButton> */}
                           </>
                         )}
                       </div>

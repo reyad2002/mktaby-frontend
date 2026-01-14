@@ -26,3 +26,8 @@ export const CASE_STATUS_PATH = "/Case/casestatus"; // GET
 export const CASE_RESOURCES_PATH = (id: number | string) =>
   `/Case/resources/${id}`; // GET
 export const CASE_DROPDOWN_PATH = "/Case/dropdown"; // GET
+
+
+
+// case total finance  
+export const CASE_TOTAL_FINANCE_PATH = "/Finance/cases";

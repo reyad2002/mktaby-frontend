@@ -88,6 +88,7 @@ export default function AddFeePaymentForm({
       status: data.status,
     };
     mutation.mutate(payload);
+    console.log(payload);
   };
 
   return (

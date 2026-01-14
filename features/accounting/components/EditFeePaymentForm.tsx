@@ -57,7 +57,7 @@ export default function EditFeePaymentForm({
     queryFn: () => getFeePaymentById(paymentId),
     enabled: !!paymentId,
   });
-
+  console.log(paymentData);
   // Fetch case fees for dropdown
   const { data: feesData } = useQuery({
     queryKey: ["caseFees", { PageSize: 100 }],
@@ -70,13 +70,13 @@ export default function EditFeePaymentForm({
     if (paymentData) {
       const payment = paymentData;
       reset({
-        title: payment.title || "",
-        caseId: payment.caseId,
-        amount: payment.amount,
-        paymentDate: payment.paymentDate?.split("T")[0] || "",
-        paymentMethod: payment.paymentMethod,
-        dueDate: payment.dueDate?.split("T")[0] || "",
-        status: payment.status,
+        title: payment?.data?.title ,
+        caseId: payment?.data?.caseId,
+        amount: payment?.data?.amount,
+        paymentDate: payment?.data?.paymentDate?.split("T")[0] || "",
+        paymentMethod: payment?.data?.paymentMethod,
+        dueDate: payment?.data?.dueDate?.split("T")[0] || "",
+        status: payment?.data?.status,
       });
     }
   }, [paymentData, reset]);

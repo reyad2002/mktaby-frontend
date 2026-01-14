@@ -26,7 +26,12 @@ import {
   MapPin,
   Edit,
   X,
+  Link2,
+  Copy,
+  Mail,
+  CheckCircle,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import {
   getCaseById,
@@ -288,7 +293,11 @@ export default function CaseOverview({ caseId, onBack }: CaseOverviewProps) {
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
-  useLockBodyScroll(showEditModal);
+  // Share modal state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useLockBodyScroll(showEditModal || showShareModal);
 
   const {
     data: caseData,
@@ -324,6 +333,44 @@ export default function CaseOverview({ caseId, onBack }: CaseOverviewProps) {
     setShowEditModal(false);
     queryClient.invalidateQueries({ queryKey: ["case", caseId] });
     queryClient.invalidateQueries({ queryKey: ["cases"] });
+  };
+
+  const handleCopyLink = async () => {
+    const url = `${window.location.origin}/dashboard/cases/${caseId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("تم نسخ الرابط بنجاح");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("فشل نسخ الرابط");
+    }
+  };
+
+  const handleNativeShare = async () => {
+    const url = `${window.location.origin}/dashboard/cases/${caseId}`;
+    const shareData = {
+      title: `قضية: ${caseDetails?.name || ""}`,
+      text: `تفاصيل القضية\n\nاسم القضية: ${
+        caseDetails?.name || ""
+      }\nرقم القضية: ${caseDetails?.caseNumber || ""}`,
+      url: url,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        toast.success("تمت المشاركة بنجاح");
+      } else {
+        // Fallback to copy if share is not supported
+        await navigator.clipboard.writeText(url);
+        toast.success("تم نسخ الرابط بنجاح");
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        toast.error("فشلت المشاركة");
+      }
+    }
   };
 
   if (isLoadingCase) return <PageSkeleton />;
@@ -420,7 +467,11 @@ export default function CaseOverview({ caseId, onBack }: CaseOverviewProps) {
               <span className="hidden sm:inline">تعديل</span>
             </button>
 
-            <button className={ui.btnGhost} title="مشاركة">
+            <button
+              onClick={() => setShowShareModal(true)}
+              className={ui.btnGhost}
+              title="مشاركة"
+            >
               <Share2 size={16} />
               <span className="hidden sm:inline">مشاركة</span>
             </button>
@@ -594,6 +645,70 @@ export default function CaseOverview({ caseId, onBack }: CaseOverviewProps) {
             onSuccess={handleEditSuccess}
             onCancel={() => setShowEditModal(false)}
           />
+        </ModalShell>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ModalShell
+          onClose={() => setShowShareModal(false)}
+          title="مشاركة القضية"
+          icon={Share2}
+        >
+          <div className="space-y-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900 mb-2">
+                {caseDetails.name}
+              </p>
+              <p className="text-xs text-slate-500">
+                رقم القضية: {caseDetails.caseNumber}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleCopyLink}
+                className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-right hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+                  {copied ? <CheckCircle size={20} /> : <Copy size={20} />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {copied ? "تم النسخ!" : "نسخ الرابط"}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    انسخ رابط القضية للمشاركة
+                  </p>
+                </div>
+                <Link2 size={18} className="text-slate-400" />
+              </button>
+
+              <button
+                onClick={handleNativeShare}
+                className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-right hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                  <Share2 size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">مشاركة</p>
+                  <p className="text-xs text-slate-500">
+                    شارك القضية مع التطبيقات المثبتة
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <div className="pt-4 border-t border-slate-200">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="w-full rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
         </ModalShell>
       )}
     </section>

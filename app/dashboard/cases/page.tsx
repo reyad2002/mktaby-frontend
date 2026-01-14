@@ -822,7 +822,7 @@ export default function CasesPage() {
                       {formatDateAr(caseItem.openedAt)}
                     </td>
 
-                    {/* أزرار الإجراءات الفخمة */}
+                    {/* أزرار الإجراءات  */}
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-center gap-2">
                         <IconButton

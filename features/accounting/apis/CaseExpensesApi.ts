@@ -29,8 +29,8 @@ export async function createCaseExpense(
 // Get Case Expense by ID
 export async function getCaseExpenseById(
   id: number
-): Promise<TYPES.CaseExpenseDetailsDto> {
-  const response = await apiClient.get<TYPES.CaseExpenseDetailsDto>(
+): Promise<TYPES.GetCaseExpenseByIdResponse> {
+  const response = await apiClient.get<TYPES.GetCaseExpenseByIdResponse>(
     PATHES.GET_CASE_EXPENSES_BY_ID_PATH(id)
   );
   return response.data;

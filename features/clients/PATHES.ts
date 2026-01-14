@@ -9,3 +9,4 @@ export const RESTORE_CLIENT_PATH = "/Client/restore"; // PATCH /Client/restore/{
 export const ADD_COMPANY_EMPLOYEE_PATH = "/Client/CompanyEmployee"; // POST /Client/CompanyEmployee/{companyId}
 export const UPDATE_COMPANY_EMPLOYEE_PATH = "/Client/CompanyEmployee"; // PUT /Client/CompanyEmployee/{id}
 export const SOFT_DELETE_EMPLOYEE_PATH = "/Client/CompanyEmployee/Soft"; // DELETE /Client/CompanyEmployee/Soft/{id}
+export const CLIENT_TOTAL_FINANCE_PATH = "/Finance/clients";

@@ -76,3 +76,4 @@ export type HardDeleteFileResponse = ApiResponse<boolean>;
 // ===========================
 
 export type RestoreFileResponse = ApiResponse<boolean>;
+

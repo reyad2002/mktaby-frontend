@@ -66,12 +66,12 @@ export default function CaseDetailsPage() {
       trans: "المهام",
       icon: ClipboardList,
     },
-    // {
-    //   key: "payments",
-    //   name: "payments",
-    //   trans: "المدفوعات",
-    //   icon: Wallet,
-    // },
+    {
+      key: "payments",
+      name: "payments",
+      trans: "المدفوعات",
+      icon: Wallet,
+    },
     {
       key: "management",
       name: "management tasks",

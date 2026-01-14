@@ -9,6 +9,7 @@ import {
   getCaseStatistics,
   getCaseDropdown,
   getCaseResources,
+  getCaseTotalFinance,
   createCase,
   updateCase,
   softDeleteCase,
@@ -324,5 +325,16 @@ export function useUnarchiveCase() {
         err?.response?.data?.message || "حدث خطأ أثناء إلغاء أرشفة القضية"
       );
     },
+  });
+}
+
+/**
+ * Fetch total finance for all cases
+ */
+export function useCaseTotalFinance() {
+  return useQuery({
+    queryKey: ["caseTotalFinance"],
+    queryFn: () => getCaseTotalFinance(),
+    staleTime: 60_000,
   });
 }

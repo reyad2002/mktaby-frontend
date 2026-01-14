@@ -312,3 +312,20 @@ export type CaseResource = {
 export type GetCaseResourcesResponse = ApiResponse<
   PaginatedResponse<CaseResource>
 >;
+
+
+// ===========================
+// Case Total Finance Response (GET /Finance/cases)
+// ===========================
+export interface CaseTotalFinance {
+  caseId: number;
+  name: string;
+  caseNumber: string;
+  clientId: number;
+  clientName: string;
+  fees: number;
+  paid: number;
+  remaining: number;
+  expenses: number;
+}
+export type GetCaseTotalFinanceResponse = ApiResponse<PaginatedResponse<CaseTotalFinance>>;

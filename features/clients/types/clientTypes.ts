@@ -195,3 +195,25 @@ export type ClientRoleOption = SelectOption<ClientRoleValues>;
 
 export type GetClientRolesResponse = ClientRoleOption[];
 
+// ===========================
+// Client Total Finance Response
+export interface ClientTotalFinance {
+  clientId: number;
+  clientName: string;
+  imageURL: string | null;
+  fees: number;
+  paid: number;
+  remaining: number;
+}
+export interface PaginationInfo {
+  pageNumber: number;
+  pageSize: number;
+  count: number;
+  data: ClientTotalFinance[];
+}
+export interface GetClientTotalFinanceResponse {
+  succeeded: boolean;
+  message: string;
+  data: PaginationInfo;
+}
+// ===========================

@@ -6,7 +6,6 @@ import {
   Loader2,
   DollarSign,
   CreditCard,
-  TrendingUp,
   TrendingDown,
   Plus,
   Edit2,
@@ -14,9 +13,6 @@ import {
   X,
   RefreshCw,
   AlertCircle,
-  CheckCircle2,
-  Clock,
-  XCircle,
   ChevronDown,
   Receipt,
   Wallet,
@@ -24,18 +20,12 @@ import {
 import toast from "react-hot-toast";
 
 import { getCaseById } from "@/features/cases/apis/casesApis";
-import {
-  getCaseFees,
-  deleteCaseFee,
-} from "@/features/accounting/apis/CaseFeesApi";
+import { getCaseFees, deleteCaseFee } from "@/features/accounting/apis/CaseFeesApi";
 import {
   getCaseExpenses,
   deleteCaseExpense,
 } from "@/features/accounting/apis/CaseExpensesApi";
-import {
-  getFeePayments,
-  deleteFeePayment,
-} from "@/features/accounting/apis/FeePaymentApi";
+import { getFeePayments, deleteFeePayment } from "@/features/accounting/apis/FeePaymentApi";
 
 import AddCaseFeeForm from "@/features/accounting/components/AddCaseFeeForm";
 import EditCaseFeeForm from "@/features/accounting/components/EditCaseFeeForm";
@@ -50,17 +40,10 @@ import type { FeePaymentDto } from "@/features/accounting/types/FeePaymentTypes"
 
 /* ─────────────────────────────── Utilities ─────────────────────────────── */
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("ar-EG", {
-    style: "currency",
-    currency: "EGP",
-  }).format(amount);
+  new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(amount);
 
 const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString("ar-EG", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  new Date(date).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
 
 const getPaymentMethodLabel = (method: string) => {
   const methods: Record<string, string> = {
@@ -74,41 +57,33 @@ const getPaymentMethodLabel = (method: string) => {
 };
 
 const getStatusInfo = (status: string) => {
-  const statusMap: Record<
-    string,
-    { icon: typeof CheckCircle2; color: string; bg: string; label: string }
-  > = {
-    Paid: {
-      icon: CheckCircle2,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-      label: "مدفوع",
-    },
-    Unpaid: {
-      icon: Clock,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-      label: "قيد الانتظار",
-    },
-    Overdue: {
-      icon: XCircle,
-      color: "text-rose-600",
-      bg: "bg-rose-50",
-      label: "متأخر",
-    },
+  const statusMap: Record<string, { dot: string; label: string }> = {
+    Paid: { dot: "bg-emerald-500", label: "مدفوع" },
+    Unpaid: { dot: "bg-amber-500", label: "قيد الانتظار" },
+    Overdue: { dot: "bg-rose-500", label: "متأخر" },
   };
   return statusMap[status] || statusMap["Unpaid"];
 };
 
-/* ─────────────────────────────── UI Styles ─────────────────────────────── */
+/* ─────────────────────────────── UI Styles (Simple + Clean) ─────────────────────────────── */
 const ui = {
+  page: "min-h-screen bg-slate-50",
   card: "rounded-2xl border border-slate-200 bg-white shadow-sm",
   btnPrimary:
     "inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition-colors disabled:opacity-50",
   btnGhost:
-    "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors",
+    "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50",
   btnDanger:
-    "inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition-colors",
+    "inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 transition-colors disabled:opacity-50",
+
+  iconBox:
+    "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700",
+  badge:
+    "inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700",
+
+  tableHead: "border-b border-slate-200",
+  row: "border-b border-slate-100 hover:bg-slate-50",
+  actionBtn: "p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors",
 };
 
 /* ─────────────────────────────── Modal Shell ─────────────────────────────── */
@@ -133,10 +108,7 @@ function ModalShell({
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-          >
+          <button onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
             <X size={20} />
           </button>
         </div>
@@ -164,7 +136,7 @@ function ConfirmDeleteModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl border border-slate-200 bg-white flex items-center justify-center">
             <AlertCircle className="text-rose-600" size={24} />
           </div>
           <div>
@@ -173,23 +145,11 @@ function ConfirmDeleteModal({
           </div>
         </div>
         <div className="flex items-center gap-3 mt-6">
-          <button
-            onClick={onCancel}
-            className={ui.btnGhost + " flex-1"}
-            disabled={isLoading}
-          >
+          <button onClick={onCancel} className={ui.btnGhost + " flex-1"} disabled={isLoading}>
             إلغاء
           </button>
-          <button
-            onClick={onConfirm}
-            className={ui.btnDanger + " flex-1"}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <Trash2 size={16} />
-            )}
+          <button onClick={onConfirm} className={ui.btnDanger + " flex-1"} disabled={isLoading}>
+            {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
             حذف
           </button>
         </div>
@@ -198,62 +158,30 @@ function ConfirmDeleteModal({
   );
 }
 
-/* ─────────────────────────────── Summary Card ─────────────────────────────── */
+/* ─────────────────────────────── Summary Card (Simple) ─────────────────────────────── */
 function SummaryCard({
   title,
   value,
   icon: Icon,
-  color,
   subtitle,
 }: {
   title: string;
   value: number;
   icon: typeof DollarSign;
-  color: "blue" | "emerald" | "orange" | "rose" | "purple";
   subtitle?: string;
 }) {
-  const colors = {
-    blue: {
-      bg: "bg-blue-50",
-      icon: "text-blue-600",
-      value: "text-blue-700",
-      border: "border-blue-200/60",
-    },
-    emerald: {
-      bg: "bg-emerald-50",
-      icon: "text-emerald-600",
-      value: "text-emerald-700",
-      border: "border-emerald-200/60",
-    },
-    orange: {
-      bg: "bg-orange-50",
-      icon: "text-orange-600",
-      value: "text-orange-700",
-      border: "border-orange-200/60",
-    },
-    rose: {
-      bg: "bg-rose-50",
-      icon: "text-rose-600",
-      value: "text-rose-700",
-      border: "border-rose-200/60",
-    },
-    purple: {
-      bg: "bg-purple-50",
-      icon: "text-purple-600",
-      value: "text-purple-700",
-      border: "border-purple-200/60",
-    },
-  };
-  const c = colors[color];
-
   return (
-    <div className={`p-4 rounded-2xl ${c.bg} border ${c.border}`}>
-      <div className={`flex items-center gap-2 ${c.icon} mb-2`}>
-        <Icon size={18} />
-        <span className="text-xs font-medium">{title}</span>
+    <div className={ui.card + " p-4"}>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium text-slate-500">{title}</p>
+          <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(value)}</p>
+          {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+        </div>
+        <span className={ui.iconBox}>
+          <Icon size={18} />
+        </span>
       </div>
-      <p className={`text-xl font-bold ${c.value}`}>{formatCurrency(value)}</p>
-      {subtitle && <p className={`text-xs mt-1 ${c.icon}`}>{subtitle}</p>}
     </div>
   );
 }
@@ -262,7 +190,6 @@ function SummaryCard({
 function SectionCard({
   title,
   icon: Icon,
-  iconColor,
   total,
   children,
   onAdd,
@@ -272,7 +199,6 @@ function SectionCard({
 }: {
   title: string;
   icon: typeof DollarSign;
-  iconColor: string;
   total: number;
   children: React.ReactNode;
   onAdd?: () => void;
@@ -287,22 +213,16 @@ function SectionCard({
         className="w-full flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 hover:bg-slate-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconColor}`}
-          >
+          <span className={ui.iconBox}>
             <Icon size={20} />
           </span>
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-slate-700">
-            {formatCurrency(total)}
-          </span>
+          <span className="text-xl font-bold text-slate-900">{formatCurrency(total)}</span>
           <ChevronDown
             size={20}
-            className={`text-slate-600 transition-transform ${
-              isOpen ? "rotate-180" : ""
-            }`}
+            className={`text-slate-600 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </div>
       </button>
@@ -313,7 +233,7 @@ function SectionCard({
           {onAdd && (
             <button
               onClick={onAdd}
-              className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-600 font-medium hover:bg-slate-100 transition-colors"
+              className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-slate-300 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors"
             >
               <Plus size={18} />
               {addLabel || "إضافة جديد"}
@@ -345,20 +265,12 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
   const [showDeleteFee, setShowDeleteFee] = useState<number | null>(null);
 
   const [showAddExpense, setShowAddExpense] = useState(false);
-  const [showEditExpense, setShowEditExpense] = useState<CaseExpenseDto | null>(
-    null
-  );
-  const [showDeleteExpense, setShowDeleteExpense] = useState<number | null>(
-    null
-  );
+  const [showEditExpense, setShowEditExpense] = useState<CaseExpenseDto | null>(null);
+  const [showDeleteExpense, setShowDeleteExpense] = useState<number | null>(null);
 
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [showEditPayment, setShowEditPayment] = useState<FeePaymentDto | null>(
-    null
-  );
-  const [showDeletePayment, setShowDeletePayment] = useState<number | null>(
-    null
-  );
+  const [showEditPayment, setShowEditPayment] = useState<FeePaymentDto | null>(null);
+  const [showDeletePayment, setShowDeletePayment] = useState<number | null>(null);
 
   // Queries
   const { data: caseData, isLoading: caseLoading } = useQuery({
@@ -367,11 +279,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
     enabled: !!caseId,
   });
 
-  const {
-    data: feesData,
-    isLoading: feesLoading,
-    isFetching: feesFetching,
-  } = useQuery({
+  const { data: feesData, isLoading: feesLoading, isFetching: feesFetching } = useQuery({
     queryKey: ["caseFees", { CaseId: caseId }],
     queryFn: () => getCaseFees({ CaseId: caseId, PageSize: 100 }),
     enabled: !!caseId,
@@ -459,31 +367,25 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
   const totalFees = fees.reduce((sum, f) => sum + f.amount, 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
-  const totalDue = totalFees + totalExpenses;
-  const balance = totalDue - totalPayments;
-  const paymentPercentage =
-    totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
 
-  const isLoading =
-    caseLoading || feesLoading || expensesLoading || paymentsLoading;
+  // NOTE: kept as-is from your original logic
+  const totalDue = totalFees - totalExpenses;
+  const balance = totalDue - totalPayments;
+  const paymentPercentage = totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
+
+  const isLoading = caseLoading || feesLoading || expensesLoading || paymentsLoading;
   const isFetching = feesFetching || expensesFetching || paymentsFetching;
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["caseFees", { CaseId: caseId }],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["caseExpenses", { CaseId: caseId }],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["feePayments", { CaseId: caseId }],
-    });
+    queryClient.invalidateQueries({ queryKey: ["caseFees", { CaseId: caseId }] });
+    queryClient.invalidateQueries({ queryKey: ["caseExpenses", { CaseId: caseId }] });
+    queryClient.invalidateQueries({ queryKey: ["feePayments", { CaseId: caseId }] });
     toast.success("جاري تحديث البيانات...");
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6">
+      <div className={ui.page + " p-6"}>
         <div className="flex items-center justify-center py-20">
           <Loader2 className="animate-spin text-teal-600" size={40} />
         </div>
@@ -492,34 +394,24 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
   }
 
   return (
-    <section className="min-h-screen bg-slate-50 p-4 md:p-6 space-y-6">
+    <section className={ui.page + " p-4 md:p-6 space-y-6"}>
       {/* Header */}
       <div className={ui.card + " p-5"}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
-              <Wallet className="text-white" size={24} />
+            <div className="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center shadow-sm">
+              <Wallet className="text-white" size={22} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
-                المحاسبة المالية
-              </h1>
+              <h1 className="text-xl font-bold text-slate-900">المحاسبة المالية</h1>
               <p className="text-sm text-slate-500">
-                {caseDetails?.name || "القضية"} -{" "}
-                {caseDetails?.caseNumber || ""}
+                {caseDetails?.name || "القضية"} - {caseDetails?.caseNumber || ""}
               </p>
             </div>
           </div>
-          <button
-            onClick={handleRefresh}
-            className={ui.btnGhost}
-            disabled={isFetching}
-          >
-            {isFetching ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <RefreshCw size={16} />
-            )}
+
+          <button onClick={handleRefresh} className={ui.btnGhost} disabled={isFetching}>
+            {isFetching ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
             تحديث
           </button>
         </div>
@@ -527,38 +419,24 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <SummaryCard title="الأتعاب" value={totalFees} icon={Receipt} subtitle={`${fees.length} رسم`} />
         <SummaryCard
-          title="إجمالي الرسوم"
-          value={totalFees}
-          icon={Receipt}
-          color="blue"
-          subtitle={`${fees.length} رسم`}
-        />
-        <SummaryCard
-          title="إجمالي المصاريف"
+          title="المصاريف"
           value={totalExpenses}
           icon={TrendingDown}
-          color="orange"
           subtitle={`${expenses.length} مصروف`}
         />
-        <SummaryCard
-          title="إجمالي المستحق"
-          value={totalDue}
-          icon={DollarSign}
-          color="purple"
-        />
+        <SummaryCard title="نهائي الربح" value={totalDue} icon={DollarSign} />
         <SummaryCard
           title="المدفوع"
           value={totalPayments}
           icon={CreditCard}
-          color="emerald"
           subtitle={`${paymentPercentage}% من المستحق`}
         />
         <SummaryCard
-          title="المتبقي"
+          title="المتبقي للسداد"
           value={balance}
-          icon={balance >= 0 ? TrendingUp : AlertCircle}
-          color={balance > 0 ? "rose" : "emerald"}
+          icon={Wallet}
           subtitle={balance > 0 ? "مطلوب سداده" : "مكتمل"}
         />
       </div>
@@ -566,19 +444,17 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
       {/* Progress Bar */}
       <div className={ui.card + " p-5"}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-slate-700">
-            نسبة السداد
-          </span>
-          <span className="text-sm font-bold text-teal-600">
-            {paymentPercentage}%
-          </span>
+          <span className="text-sm font-medium text-slate-700">نسبة السداد</span>
+          <span className="text-sm font-bold text-teal-700">{paymentPercentage}%</span>
         </div>
+
         <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-500"
+            className="h-full bg-teal-600 rounded-full transition-all duration-500"
             style={{ width: `${Math.min(paymentPercentage, 100)}%` }}
           />
         </div>
+
         <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
           <span>المدفوع: {formatCurrency(totalPayments)}</span>
           <span>المتبقي: {formatCurrency(balance)}</span>
@@ -589,7 +465,6 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
       <SectionCard
         title="الرسوم"
         icon={Receipt}
-        iconColor="bg-blue-50 text-blue-600"
         total={totalFees}
         isOpen={feesOpen}
         onToggle={() => setFeesOpen(!feesOpen)}
@@ -599,57 +474,44 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
         {fees.length === 0 ? (
           <div className="text-center py-8">
             <Receipt size={40} className="mx-auto text-slate-300 mb-2" />
-            <p className="text-slate-600 font-medium">لا توجد رسوم مضافة</p>
-            <p className="text-sm text-slate-500 mt-1">
-              ابدأ بإضافة الرسوم للقضية
-            </p>
+            <p className="text-slate-700 font-medium">لا توجد رسوم مضافة</p>
+            <p className="text-sm text-slate-500 mt-1">ابدأ بإضافة الرسوم للقضية</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
-                    الوصف
-                  </th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
-                    المبلغ
-                  </th>
+                <tr className={ui.tableHead}>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">الوصف</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     تاريخ الاستحقاق
                   </th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
-                    الإجراءات
-                  </th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {fees.map((fee) => (
-                  <tr
-                    key={fee.id}
-                    className="border-b border-slate-100 hover:bg-slate-50"
-                  >
+                  <tr key={fee.id} className={ui.row}>
                     <td className="py-3 px-3 text-slate-900">
                       {fee.description || `رسم #${fee.id}`}
                     </td>
                     <td className="py-3 px-3 font-semibold text-slate-900">
                       {formatCurrency(fee.amount)}
                     </td>
-                    <td className="py-3 px-3 text-slate-600">
-                      {formatDate(fee.toBePaidAt)}
-                    </td>
+                    <td className="py-3 px-3 text-slate-600">{formatDate(fee.toBePaidAt)}</td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setShowEditFee(fee)}
-                          className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"
+                          className={ui.actionBtn}
                           title="تعديل"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => setShowDeleteFee(fee.id)}
-                          className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-colors"
+                          className={ui.actionBtn + " hover:text-rose-600"}
                           title="حذف"
                         >
                           <Trash2 size={16} />
@@ -668,7 +530,6 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
       <SectionCard
         title="المصاريف"
         icon={TrendingDown}
-        iconColor="bg-orange-50 text-orange-600"
         total={totalExpenses}
         isOpen={expensesOpen}
         onToggle={() => setExpensesOpen(!expensesOpen)}
@@ -678,57 +539,44 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
         {expenses.length === 0 ? (
           <div className="text-center py-8">
             <TrendingDown size={40} className="mx-auto text-slate-300 mb-2" />
-            <p className="text-slate-600 font-medium">لا توجد مصاريف مضافة</p>
-            <p className="text-sm text-slate-500 mt-1">
-              ابدأ بإضافة المصاريف للقضية
-            </p>
+            <p className="text-slate-700 font-medium">لا توجد مصاريف مضافة</p>
+            <p className="text-sm text-slate-500 mt-1">ابدأ بإضافة المصاريف للقضية</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
-                    المبلغ
-                  </th>
+                <tr className={ui.tableHead}>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     تاريخ المصروف
                   </th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     تاريخ الإضافة
                   </th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
-                    الإجراءات
-                  </th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {expenses.map((expense) => (
-                  <tr
-                    key={expense.id}
-                    className="border-b border-slate-100 hover:bg-slate-50"
-                  >
+                  <tr key={expense.id} className={ui.row}>
                     <td className="py-3 px-3 font-semibold text-slate-900">
                       {formatCurrency(expense.amount)}
                     </td>
-                    <td className="py-3 px-3 text-slate-600">
-                      {formatDate(expense.expenseDate)}
-                    </td>
-                    <td className="py-3 px-3 text-slate-600">
-                      {formatDate(expense.createdAt)}
-                    </td>
+                    <td className="py-3 px-3 text-slate-600">{formatDate(expense.expenseDate)}</td>
+                    <td className="py-3 px-3 text-slate-600">{formatDate(expense.createdAt)}</td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setShowEditExpense(expense)}
-                          className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"
+                          className={ui.actionBtn}
                           title="تعديل"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => setShowDeleteExpense(expense.id)}
-                          className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-colors"
+                          className={ui.actionBtn + " hover:text-rose-600"}
                           title="حذف"
                         >
                           <Trash2 size={16} />
@@ -747,79 +595,55 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
       <SectionCard
         title="الدفعات"
         icon={CreditCard}
-        iconColor="bg-emerald-50 text-emerald-600"
         total={totalPayments}
         isOpen={paymentsOpen}
         onToggle={() => setPaymentsOpen(!paymentsOpen)}
         onAdd={() => setShowAddPayment(true)}
         addLabel="إضافة دفعة جديدة"
       >
-        {/* Payment Stats */}
+        {/* Payment Stats (Simple) */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
-            <p className="text-xs text-emerald-700 mb-1">المدفوع</p>
-            <p className="text-lg font-bold text-emerald-700">
-              {formatCurrency(totalPayments)}
-            </p>
+          <div className={ui.card + " p-3"}>
+            <p className="text-xs text-slate-500 mb-1">المدفوع</p>
+            <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPayments)}</p>
           </div>
-          <div className="rounded-xl bg-rose-50 border border-rose-200 p-3">
-            <p className="text-xs text-rose-700 mb-1">المتبقي</p>
-            <p className="text-lg font-bold text-rose-700">
-              {formatCurrency(Math.max(balance, 0))}
-            </p>
+          <div className={ui.card + " p-3"}>
+            <p className="text-xs text-slate-500 mb-1">المتبقي</p>
+            <p className="text-lg font-bold text-slate-900">{formatCurrency(Math.max(balance, 0))}</p>
           </div>
-          <div className="rounded-xl bg-blue-50 border border-blue-200 p-3">
-            <p className="text-xs text-blue-700 mb-1">نسبة السداد</p>
-            <p className="text-lg font-bold text-blue-700">
-              {paymentPercentage}%
-            </p>
+          <div className={ui.card + " p-3"}>
+            <p className="text-xs text-slate-500 mb-1">نسبة السداد</p>
+            <p className="text-lg font-bold text-slate-900">{paymentPercentage}%</p>
           </div>
         </div>
 
         {payments.length === 0 ? (
           <div className="text-center py-8">
             <CreditCard size={40} className="mx-auto text-slate-300 mb-2" />
-            <p className="text-slate-600 font-medium">
-              لم تتم أي دفعات حتى الآن
-            </p>
-            <p className="text-sm text-slate-500 mt-1">
-              ابدأ بتسجيل دفعة جديدة
-            </p>
+            <p className="text-slate-700 font-medium">لم تتم أي دفعات حتى الآن</p>
+            <p className="text-sm text-slate-500 mt-1">ابدأ بتسجيل دفعة جديدة</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
-                    التاريخ
-                  </th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
-                    المبلغ
-                  </th>
+                <tr className={ui.tableHead}>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">التاريخ</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     طريقة الدفع
                   </th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
-                    الحالة
-                  </th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
-                    الإجراءات
-                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">الحالة</th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((payment) => {
                   const statusInfo = getStatusInfo(payment.status);
-                  const StatusIcon = statusInfo.icon;
+
                   return (
-                    <tr
-                      key={payment.id}
-                      className="border-b border-slate-100 hover:bg-slate-50"
-                    >
-                      <td className="py-3 px-3 text-slate-900">
-                        {formatDate(payment.paymentDate)}
-                      </td>
+                    <tr key={payment.id} className={ui.row}>
+                      <td className="py-3 px-3 text-slate-900">{formatDate(payment.paymentDate)}</td>
                       <td className="py-3 px-3 font-semibold text-slate-900">
                         {formatCurrency(payment.amount)}
                       </td>
@@ -827,29 +651,23 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
                         {getPaymentMethodLabel(payment.paymentMethod)}
                       </td>
                       <td className="py-3 px-3">
-                        <div
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${statusInfo.bg}`}
-                        >
-                          <StatusIcon size={14} className={statusInfo.color} />
-                          <span
-                            className={`text-xs font-medium ${statusInfo.color}`}
-                          >
-                            {statusInfo.label}
-                          </span>
+                        <div className={ui.badge}>
+                          <span className={`h-2 w-2 rounded-full ${statusInfo.dot}`} />
+                          <span>{statusInfo.label}</span>
                         </div>
                       </td>
                       <td className="py-3 px-3">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => setShowEditPayment(payment)}
-                            className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"
+                            className={ui.actionBtn}
                             title="تعديل"
                           >
                             <Edit2 size={16} />
                           </button>
                           <button
                             onClick={() => setShowDeletePayment(payment.id)}
-                            className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-colors"
+                            className={ui.actionBtn + " hover:text-rose-600"}
                             title="حذف"
                           >
                             <Trash2 size={16} />
@@ -908,10 +726,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Add Expense Modal */}
       {showAddExpense && (
-        <ModalShell
-          onClose={() => setShowAddExpense(false)}
-          title="إضافة مصروف جديد"
-        >
+        <ModalShell onClose={() => setShowAddExpense(false)} title="إضافة مصروف جديد">
           <AddCaseExpenseForm
             defaultCaseId={caseId}
             onSuccess={() => {
@@ -925,10 +740,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Edit Expense Modal */}
       {showEditExpense && (
-        <ModalShell
-          onClose={() => setShowEditExpense(null)}
-          title="تعديل المصروف"
-        >
+        <ModalShell onClose={() => setShowEditExpense(null)} title="تعديل المصروف">
           <EditCaseExpenseForm
             expenseId={showEditExpense.id}
             defaultCaseId={caseId}
@@ -954,10 +766,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Add Payment Modal */}
       {showAddPayment && (
-        <ModalShell
-          onClose={() => setShowAddPayment(false)}
-          title="إضافة دفعة جديدة"
-        >
+        <ModalShell onClose={() => setShowAddPayment(false)} title="إضافة دفعة جديدة">
           <AddFeePaymentForm
             defaultCaseId={caseId}
             onSuccess={() => {
@@ -971,10 +780,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Edit Payment Modal */}
       {showEditPayment && (
-        <ModalShell
-          onClose={() => setShowEditPayment(null)}
-          title="تعديل الدفعة"
-        >
+        <ModalShell onClose={() => setShowEditPayment(null)} title="تعديل الدفعة">
           <EditFeePaymentForm
             paymentId={showEditPayment.id}
             defaultCaseId={caseId}

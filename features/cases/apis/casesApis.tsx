@@ -18,6 +18,7 @@ import type {
   GetCaseDropdownResponse,
   CaseResourcesQuery,
   GetCaseResourcesResponse,
+  GetCaseTotalFinanceResponse,
 } from "@/features/cases/types/casesTypes";
 import {
   CASES_LIST_PATH,
@@ -34,6 +35,7 @@ import {
   CASE_STATUS_PATH,
   CASE_RESOURCES_PATH,
   CASE_DROPDOWN_PATH,
+  CASE_TOTAL_FINANCE_PATH,
 } from "@/features/cases/PATHES";
 import apiClient from "@/lib/apiClient";
 
@@ -191,5 +193,12 @@ export async function getCaseResources(
       params: queryParams,
     }
   );
+  return response.data;
+}
+
+// ===========================
+// GET /Finance/cases - Get case total finance
+export async function getCaseTotalFinance(): Promise<GetCaseTotalFinanceResponse> {
+  const response = await apiClient.get<GetCaseTotalFinanceResponse>(CASE_TOTAL_FINANCE_PATH);
   return response.data;
 }

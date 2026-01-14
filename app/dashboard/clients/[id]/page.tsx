@@ -19,6 +19,7 @@ import {
   IdCard,
   AlertCircle,
   ArrowRight,
+  Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackButton } from "@/shared/components/ui";
@@ -32,6 +33,11 @@ import {
   softDeleteEmployee,
 } from "@/features/clients/apis/clientsApi";
 import EditClientForm from "@/features/clients/components/EditClientForm";
+
+import { useCases } from "@/features/cases/hooks/caseHooks";
+import type { GetCasesQuery } from "@/features/cases/types/casesTypes";
+import { useClientFinance } from "@/features/clients/hooks/clientsHooks";
+import { DollarSign, TrendingUp, Wallet } from "lucide-react";
 
 type EmployeeFormState = {
   name: string;
@@ -89,6 +95,29 @@ export default function ClientDetailsPage() {
   });
 
   const client = clientResponse?.data;
+
+  // Fetch cases related to this client
+  const caseFilters: GetCasesQuery = useMemo(
+    () => ({
+      ClientId: clientId,
+      PageNumber: 1,
+      PageSize: 100,
+      IsDeleted: false,
+      IsArchived: false,
+    }),
+    [clientId]
+  );
+
+  const { data: casesResponse, isLoading: casesLoading } =
+    useCases(caseFilters);
+
+  const relatedCases = casesResponse?.data?.data ?? [];
+
+  // Fetch client finance
+  const { data: financeResponse, isLoading: financeLoading } =
+    useClientFinance(clientId);
+
+  const clientFinances = financeResponse?.data?.data ?? [];
 
   const softDeleteMutation = useMutation({
     mutationFn: softDeleteClient,
@@ -252,23 +281,21 @@ export default function ClientDetailsPage() {
               className="inline-flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-cyan-800 text-sm font-medium hover:bg-cyan-100 transition-colors"
             >
               <Edit size={16} />
-              تعديل
             </button>
 
             <button
               onClick={handleSoftDelete}
               disabled={softDeleteMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-orange-800 text-sm font-medium hover:bg-orange-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-red-800 text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {softDeleteMutation.isPending ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Archive size={16} />
+                <Trash2 size={16} />
               )}
-              أرشفة
             </button>
 
-            <button
+            {/* <button
               onClick={handleHardDelete}
               disabled={hardDeleteMutation.isPending}
               className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-red-800 text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -279,7 +306,7 @@ export default function ClientDetailsPage() {
                 <Trash2 size={16} />
               )}
               حذف
-            </button>
+            </button> */}
           </div>
         )}
       </div>
@@ -533,6 +560,203 @@ export default function ClientDetailsPage() {
               )}
             </div>
           )}
+
+          {/* Related Cases */}
+          <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Briefcase className="text-teal-700" size={18} />
+                القضايا المرتبطة
+              </h3>
+            </div>
+
+            {casesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="animate-spin text-teal-600" size={32} />
+              </div>
+            ) : relatedCases.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-right py-3 px-4 text-gray-700 font-semibold">
+                        رقم القضية
+                      </th>
+                      <th className="text-right py-3 px-4 text-gray-700 font-semibold">
+                        اسم القضية
+                      </th>
+                      <th className="text-right py-3 px-4 text-gray-700 font-semibold">
+                        النوع
+                      </th>
+                      <th className="text-right py-3 px-4 text-gray-700 font-semibold">
+                        الحالة
+                      </th>
+                      <th className="text-center py-3 px-4 text-gray-700 font-semibold">
+                        الإجراء
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {relatedCases.map((caseItem) => (
+                      <tr
+                        key={caseItem.id}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="py-3 px-4 text-gray-900 font-mono">
+                          {caseItem.caseNumber}
+                        </td>
+                        <td className="py-3 px-4 text-gray-900 font-medium">
+                          {caseItem.name}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            {caseItem.caseType.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            {caseItem.caseStatus.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            onClick={() =>
+                              router.push(`/dashboard/cases/${caseItem.id}`)
+                            }
+                            className="inline-flex items-center gap-1 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-teal-700 text-xs font-medium hover:bg-teal-100 transition-colors"
+                          >
+                            <Eye size={14} />
+                            عرض
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+                <Briefcase className="mx-auto text-gray-400" size={32} />
+                <p className="mt-2 text-gray-700 font-medium">
+                  لا توجد قضايا مرتبطة بهذا العميل
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  ستظهر القضايا هنا عند إنشاء قضايا جديدة.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Client Finance Section */}
+          <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <DollarSign className="text-emerald-700" size={18} />
+                الملخص المالي للعميل
+              </h3>
+            </div>
+
+            {financeLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="animate-spin text-emerald-600" size={32} />
+              </div>
+            ) : clientFinances.length > 0 ? (
+              <div className="space-y-4">
+                {clientFinances.map((financeItem) => (
+                  <div
+                    key={financeItem.clientId}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-50 border border-blue-100">
+                          <DollarSign className="text-blue-700" size={18} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">الأتعاب</p>
+                          <p className="text-gray-900 font-bold">
+                            {new Intl.NumberFormat("ar-EG", {
+                              style: "currency",
+                              currency: "EGP",
+                            }).format(financeItem.fees)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-100">
+                          <TrendingUp className="text-emerald-700" size={18} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">المدفوع</p>
+                          <p className="text-emerald-700 font-bold">
+                            {new Intl.NumberFormat("ar-EG", {
+                              style: "currency",
+                              currency: "EGP",
+                            }).format(financeItem.paid)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-orange-50 border border-orange-100">
+                          <Wallet className="text-orange-700" size={18} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">المتبقي</p>
+                          <p className="text-orange-700 font-bold">
+                            {new Intl.NumberFormat("ar-EG", {
+                              style: "currency",
+                              currency: "EGP",
+                            }).format(financeItem.remaining)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-600">
+                          نسبة السداد
+                        </span>
+                        <span className="text-xs font-bold text-gray-700">
+                          {Math.round(
+                            (financeItem.paid / Math.max(1, financeItem.fees)) *
+                              100
+                          )}
+                          %
+                        </span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-emerald-500 transition-all"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (financeItem.paid /
+                                Math.max(1, financeItem.fees)) *
+                                100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+                <DollarSign className="mx-auto text-gray-400" size={32} />
+                <p className="mt-2 text-gray-700 font-medium">
+                  لا توجد بيانات مالية لهذا العميل
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  ستظهر البيانات المالية هنا عند إضافة مدفوعات.
+                </p>
+              </div>
+            )}
+          </div>
         </>
       )}
 

@@ -27,8 +27,8 @@ export async function createFeePayment(
 // Get Fee Payment by ID
 export async function getFeePaymentById(
   id: number    
-): Promise<TYPES.FeePaymentDetailsDto> {
-  const response = await apiClient.get<TYPES.FeePaymentDetailsDto>(
+): Promise<TYPES.GetFeePaymentByIdResponse> {
+  const response = await apiClient.get<TYPES.GetFeePaymentByIdResponse>(
     PATHES.GET_FEE_PAYMENT_BY_ID_PATH(id)
   );
   return response.data;

@@ -42,11 +42,15 @@ export function useOffice() {
 /**
  * Fetch office resources
  */
-export function useOfficeResources(filters: GetOfficeResourcesParams = {}) {
+export function useOfficeResources(
+  filters: GetOfficeResourcesParams = {},
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: officeKeys.resourcesList(filters),
     queryFn: () => getOfficeResources(filters),
     staleTime: 10_000,
+    enabled: options?.enabled ?? true,
   });
 }
 

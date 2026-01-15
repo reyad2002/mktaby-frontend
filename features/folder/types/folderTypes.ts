@@ -19,7 +19,7 @@ export type PaginatedResponse<TItem> = {
 // Entity Type for folder
 // ===========================
 
-export type EntityType = "Case" | "Client" | "Session" | "Task" | "Court";
+export type EntityType = "Case" | "Client" | "Session" | "Task" | "Court" | "Office";
 
 // ===========================
 // Folder Resource Item
@@ -64,8 +64,8 @@ export type GetFolderResponse = ApiResponse<Folder>;
 export interface CreateFolderRequest {
   name: string;
   entityType: EntityType;
-  entityId: number;
-  parentFolderId?: number;
+  entityId: number | null;
+  parentFolderId?: number | null;
 }
 
 export type CreateFolderResponse = ApiResponse<number>;

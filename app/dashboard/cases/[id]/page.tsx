@@ -72,12 +72,12 @@ export default function CaseDetailsPage() {
       trans: "المدفوعات",
       icon: Wallet,
     },
-    {
-      key: "management",
-      name: "management tasks",
-      trans: "مهام الإدارة",
-      icon: ShieldCheck,
-    },
+    // {
+    //   key: "management",
+    //   name: "management tasks",
+    //   trans: "مهام الإدارة",
+    //   icon: ShieldCheck,
+    // },
   ];
 
   const handleBack = () => {

@@ -3,7 +3,9 @@ import * as taskTypes from "../types/taskTypes";
 import * as pathes from "../PATHES";
 
 export const fetchTasksApi = async (params: taskTypes.GetTasksQuery) => {
-  return apiClient.get<taskTypes.GetTasksResponse>(pathes.TASKS_LIST_PATH, { params });
+  return apiClient.get<taskTypes.GetTasksResponse>(pathes.TASKS_LIST_PATH, {
+    params,
+  });
 };
 
 export const fetchTaskByIdApi = async (taskId: number) => {
@@ -13,11 +15,11 @@ export const fetchTaskByIdApi = async (taskId: number) => {
 };
 
 export const fetchTaskPrioritiesApi = async () => {
-  return apiClient.get<taskTypes.TaskPriority[]>(pathes.TASK_PRIORITIES_PATH);
+  return apiClient.get<taskTypes.LabeledValue[]>(pathes.TASK_PRIORITIES_PATH);
 };
 
 export const fetchTaskStatusesApi = async () => {
-  return apiClient.get<taskTypes.TaskStatus[]>(pathes.TASK_STATUS_PATH);
+  return apiClient.get<taskTypes.LabeledValue[]>(pathes.TASK_STATUS_PATH);
 };
 
 export const addTaskApi = async (taskData: taskTypes.CreateTaskRequest) => {

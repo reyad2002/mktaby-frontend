@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Plus,
@@ -268,7 +269,7 @@ function IconButton({
   title: string;
   onClick: () => void;
   disabled?: boolean;
-  variant?: "neutral" | "green" | "orange" | "red" | "blue" | "purple";
+  variant?: "neutral" | "green" | "orange" | "red" | "blue" | "purple" | "primary";
   children: React.ReactNode;
 }) {
   const variants: Record<string, string> = {
@@ -282,6 +283,7 @@ function IconButton({
     red: "border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300",
     purple:
       "border-purple-200/70 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:border-purple-300",
+      primary: "border-primary/10 bg-white text-primary  ",
   };
 
   const glow: Record<string, string> = {
@@ -291,6 +293,7 @@ function IconButton({
     orange: "hover:shadow-[0_10px_25px_-15px_rgba(249,115,22,0.7)]",
     red: "hover:shadow-[0_10px_25px_-15px_rgba(239,68,68,0.7)]",
     purple: "hover:shadow-[0_10px_25px_-15px_rgba(168,85,247,0.7)]",
+    primary: "hover:shadow-[0_10px_25px_-15px_rgba(23,83,110,0.7)]",
   };
 
   return (
@@ -483,7 +486,7 @@ export default function SessionsPage() {
     () => sessionStatuses.map((s) => ({ label: s.label, value: s.value })),
     [sessionStatuses]
   );
-
+  const router = useRouter();
   return (
     <section className="space-y-6 relative">
       {/* Soft premium background */}
@@ -666,7 +669,7 @@ export default function SessionsPage() {
         </div>
 
         {/* Status */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             حالة السجلات
           </label>
@@ -721,7 +724,7 @@ export default function SessionsPage() {
               );
             })}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Table / States */}
@@ -821,12 +824,13 @@ export default function SessionsPage() {
                         </span>
 
                         <div className="min-w-0">
-                          <div
-                            className="font-bold text-gray-900 truncate max-w-[520px]"
+                          <button
+                            onClick={()=>router.push( `/dashboard/cases/${session.caseId}` )}
+                            className=" cursor-pointer font-bold text-gray-900 truncate max-w-130 underline hover:text-primary text-left"
                             title={session.caseName}
                           >
                             {session.caseName || "—"}
-                          </div>
+                          </button>
                           <div className="text-xs text-gray-500 mt-1" dir="ltr">
                             رقم القضية:{" "}
                             <span className="font-mono font-semibold text-gray-700">
@@ -852,7 +856,7 @@ export default function SessionsPage() {
                       <div className="flex items-center justify-center gap-2">
                         <IconButton
                           title="عرض التفاصيل"
-                          variant="blue"
+                          variant="primary"
                           onClick={() => {
                             setSelectedSession(session);
                             setShowViewModal(true);
@@ -863,7 +867,7 @@ export default function SessionsPage() {
 
                         <IconButton
                           title="تعديل"
-                          variant="purple"
+                          variant="primary"
                           onClick={() => {
                             setEditSessionId(session.id);
                             setShowEditModal(true);

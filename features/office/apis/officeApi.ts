@@ -1,5 +1,5 @@
 import apiClient from "@/lib/apiClient";
-import { OFFICE_PATH } from "../PATHES";
+import { OFFICE_PATH, OFFICE_RESOURCES_PATH } from "../PATHES";
 import {
   OfficeResponse,
   OfficeResourceListResponse,
@@ -15,7 +15,7 @@ export const getOfficeResources = async (
   params: GetOfficeResourcesParams = {}
 ): Promise<OfficeResourceListResponse> => {
   const response: AxiosResponse<OfficeResourceListResponse> =
-    await apiClient.get("/api/Office/resources", {
+    await apiClient.get(OFFICE_RESOURCES_PATH, {
       params,
     });
   return response.data;
@@ -26,7 +26,7 @@ export const updateOffice = async (
   payload: UpdateOfficePayload
 ): Promise<UpdateOfficeResponse> => {
   const response: AxiosResponse<UpdateOfficeResponse> = await apiClient.put(
-    "/api/Office",
+    OFFICE_PATH,
     payload
   );
   return response.data;

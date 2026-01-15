@@ -436,6 +436,8 @@ export default function ClientsPage() {
         countLabel={`${totalCount} عميل`}
         onAdd={() => setShowAddClientModal(true)}
         addButtonLabel="إضافة عميل"
+        finance={() => router.push("/dashboard/clients-finance")}
+        financeLabel="المحاسبة المالية للعملاء"
       />
 
       {/* Main Content Area */}

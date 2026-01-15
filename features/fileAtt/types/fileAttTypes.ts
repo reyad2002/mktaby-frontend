@@ -12,7 +12,7 @@ export type ApiResponse<T> = {
 // Entity Type for file attachment
 // ===========================
 
-export type EntityType = "Case" | "Client" | "Session" | "Task" | "Court";
+export type EntityType = "Case" | "Client" | "Session" | "Task" | "Court" | "Office";
 
 // ===========================
 // Upload File Request (PUT /Files)

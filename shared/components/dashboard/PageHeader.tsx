@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { LucideIcon } from "lucide-react";
-import { Loader2, RefreshCcw, Plus, ArrowRight } from "lucide-react";
+import { Loader2, RefreshCcw, Plus, ArrowRight, DollarSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface PageHeaderAction {
@@ -30,6 +30,8 @@ interface PageHeaderProps {
   onBack?: () => void;
   /** Fallback URL when there's no history */
   backFallbackUrl?: string;
+  finance?: () => void;
+  financeLabel?: string;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
@@ -46,6 +48,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   showBackButton = false,
   onBack,
   backFallbackUrl = "/dashboard",
+  finance,
+  financeLabel = "",
 }) => {
   const router = useRouter();
 
@@ -182,6 +186,17 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 <span>{addButtonLabel}</span>
               </button>
             )}
+            {finance && (
+              <button
+                type="button"
+                onClick={finance}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-yellow-500 text-white font-bold text-sm shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
+              >
+                <DollarSign size={20} strokeWidth={3} />
+                <span>{financeLabel}</span>
+              </button>
+            )}
+
           </div>
         </div>
       </div>

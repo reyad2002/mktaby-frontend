@@ -21,7 +21,7 @@ import type {
 } from "../types/fileAttTypes";
 
 // ===========================
-// PUT /Files - Upload file
+// Post /Files - Upload file
 // ===========================
 export async function uploadFile(
   data: UploadFileRequest
@@ -38,7 +38,7 @@ export async function uploadFile(
     formData.append("Description", data.description);
   }
 
-  const response = await apiClient.put<UploadFileResponse>(
+  const response = await apiClient.post<UploadFileResponse>(
     UPLOAD_FILE_PATH,
     formData,
     {

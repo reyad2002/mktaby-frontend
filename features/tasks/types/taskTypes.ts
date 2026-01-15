@@ -8,8 +8,20 @@ export type TaskStatus =
   | "Completed"
   | "Cancelled";
 
-export type TaskPriority = "Low" | "Normal" | "High";
-
+export type TaskPriority = "Low" | "Normal" | "High" ;
+export const TaskPrioritiesArabicMap: Record<TaskPriority, string> = {
+  Low: "منخفضة",
+  Normal: "عادية",
+  High: "عالية",
+};
+export const TaskStatusesArabicMap: Record<TaskStatus, string> = {
+  Pending: "قيد الانتظار",
+  InProgress: "قيد التنفيذ",
+  OnHold: "معلق",
+  Overdue: "متأخر",
+  Completed: "مكتمل",
+  Cancelled: "ملغي",
+};
 export type EntityType =
   | "Case"
   | "Session"

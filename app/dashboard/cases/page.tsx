@@ -456,6 +456,8 @@ export default function CasesPage() {
         countLabel={`${totalCount} قضية`}
         onAdd={() => router.push("/dashboard/cases/add")}
         addButtonLabel="إضافة قضية"
+        finance={() => router.push("/dashboard/cases-finance")}
+        financeLabel="المحاسبة المالية للقضايا"
       />
 
       {/* Main Content Area */}

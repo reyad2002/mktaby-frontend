@@ -33,6 +33,9 @@ const ENTITY_TYPES: { value: EntityType; label: string }[] = [
   { value: "Task", label: "المهام" },
   { value: "Client", label: "العملاء" },
   { value: "ApplicationUser", label: "المستخدمون" },
+  { value: "CompanyEmployee", label: "الموظفون" },
+  { value: "Office", label: "المكتب" },
+  { value: "Folder", label: "المجلدات" },
 ];
 
 const WEEKDAYS_AR = [

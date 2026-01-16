@@ -38,6 +38,7 @@ import { useCases } from "@/features/cases/hooks/caseHooks";
 import type { GetCasesQuery } from "@/features/cases/types/casesTypes";
 import { useClientFinance } from "@/features/clients/hooks/clientsHooks";
 import { DollarSign, TrendingUp, Wallet } from "lucide-react";
+import FileManager from "@/features/fileAtt/components/FileManager";
 
 type EmployeeFormState = {
   name: string;
@@ -645,6 +646,17 @@ export default function ClientDetailsPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Client Files Section */}
+          <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-6">
+            <FileManager
+              entityType="Client"
+              entityId={clientId}
+              title="ملفات العميل"
+              subtitle="عرض وإدارة ملفات العميل والمجلدات والمستندات."
+              showCreateFolder={true}
+            />
           </div>
 
           {/* Client Finance Section */}

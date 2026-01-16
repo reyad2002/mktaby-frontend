@@ -10,8 +10,12 @@ import {
   getClientById,
   getClientFinance,
   getAllClientsFinance,
+  getClientResources,
 } from "@/features/clients/apis/clientsApi";
-import type { ClientsQueryParams } from "@/features/clients/types/clientTypes";
+import type {
+  ClientsQueryParams,
+  ClientResourcesQuery,
+} from "@/features/clients/types/clientTypes";
 
 // ===========================
 export function useClients(filters: ClientsQueryParams) {
@@ -124,5 +128,20 @@ export function useAllClientsFinance() {
     queryKey: ["allClientsFinance"],
     queryFn: () => getAllClientsFinance(),
     staleTime: 60_000,
+  });
+}
+
+/**
+ * Fetch client resources (files and folders)
+ */
+export function useClientResources(
+  id: number | string,
+  filters: ClientResourcesQuery,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ["clientResources", id, filters],
+    queryFn: () => getClientResources(id, filters),
+    enabled: !!id && enabled,
   });
 }

@@ -216,4 +216,36 @@ export interface GetClientTotalFinanceResponse {
   message: string;
   data: PaginationInfo;
 }
+
+// ===========================
+// Client Resources types (similar to Case Resources)
+// ===========================
+export type ClientResourcesQuery = {
+  PageNumber?: number;
+  PageSize?: number;
+  Search?: string;
+  Sort?: string;
+  IsDeleted?: boolean;
+};
+
+export type ClientResource = {
+  id: number;
+  name: string;
+  type: string;
+  contentType: string;
+  size: number;
+  userId: number;
+  userFullName: string;
+  userImageURL: string;
+  createdAt: string;
+};
+
+export type ClientResourcesPage = {
+  pageNumber: number;
+  pageSize: number;
+  count: number;
+  data: ClientResource[];
+};
+
+export type GetClientResourcesResponse = ApiResponse<ClientResourcesPage>;
 // ===========================

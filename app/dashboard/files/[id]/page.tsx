@@ -22,6 +22,7 @@ import {
   SkeletonCard,
   SkeletonStatsCard,
 } from "@/shared/components/ui/Skeleton";
+import FileManager from "@/features/fileAtt/components/FileManager";
 
 const formatBytes = (bytes?: number) => {
   if (!bytes || bytes <= 0) return "—";
@@ -293,27 +294,19 @@ const Page = () => {
             ))}
           </div>
 
-          {resources.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center shadow-sm">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <FolderOpen size={28} />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-gray-900">
-                  لا توجد ملفات هنا بعد
-                </p>
-                <p className="text-sm font-semibold text-gray-500">
-                  ابدأ برفع ملفات إلى هذا المجلد لتظهر في هذه القائمة.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {resources.map((file) => (
-                <FileCard key={file.id} resource={file} />
-              ))}
-            </div>
-          )}
+          {/* FileManager for folder contents */}
+          <FileManager
+            entityType="Office"
+            entityId={folderId}
+            parentFolderId={folderId}
+            title={
+              folderInfo?.data?.name
+                ? `ملفات المجلد: ${folderInfo.data.name}`
+                : "ملفات المجلد"
+            }
+            subtitle="عرض وإدارة ملفات المجلد والمجلدات الفرعية."
+            showCreateFolder={true}
+          />
         </>
       )}
     </div>

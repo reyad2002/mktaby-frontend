@@ -210,6 +210,7 @@ function UploadFileForm({
         },
       }
     );
+    console.log({file, entityType, entityId, folderId, displayName, description });
   };
 
   const formatFileSize = (bytes: number) => {
@@ -505,7 +506,10 @@ function CreateFolderForm({
     </form>
   );
 }
-
+// ===== edit folder name 
+// function EditFolderForm( ) {   
+//   return <div>Edit Folder Form</div>;
+// }
 // ===== Main FileManager Component =====
 interface FileManagerProps {
   entityType: EntityType;
@@ -533,9 +537,7 @@ export default function FileManager({
   const [editingFileId, setEditingFileId] = useState<number | null>(null);
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
 
-  useLockBodyScroll(
-    showAddFileModal || showEditModal || showAddFolderModal
-  );
+  useLockBodyScroll(showAddFileModal || showEditModal || showAddFolderModal);
 
   const downloadFile = useDownloadFile();
   const softDeleteFile = useSoftDeleteFile();
@@ -550,29 +552,45 @@ export default function FileManager({
     };
   }, [pageNumber, pageSize, search]);
 
-  // Fetch resources based on entity type
+  // Call all hooks unconditionally
+  const folderResourcesQuery = useFolderResources(
+    parentFolderId ?? 0,
+    !!parentFolderId
+  );
+  const caseResourcesQuery = useCaseResources(
+    entityId,
+    { ...queryParams, id: entityId } as CaseResourcesQuery,
+    entityType === "Case" && !!entityId
+  );
+  const clientResourcesQuery = useClientResources(
+    entityId,
+    queryParams,
+    entityType === "Client" && !!entityId
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const officeResourcesQuery = useOfficeResources(queryParams as any, {
+    enabled: entityType === "Office" && !!entityId,
+  });
+
+  // Select the appropriate query based on entity type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let resourcesQuery: any;
   if (parentFolderId) {
-    // If we're in a folder, use folder resources
-    resourcesQuery = useFolderResources(parentFolderId, !!parentFolderId);
+    resourcesQuery = folderResourcesQuery;
   } else if (entityType === "Case") {
-    // For Case, use case resources hook - id is passed separately, not in query params
-    // Note: CaseResourcesQuery type includes id but it's actually a path param, not a query param
-    resourcesQuery = useCaseResources(
-      entityId,
-      { ...queryParams, id: entityId } as CaseResourcesQuery,
-      !!entityId
-    );
+    resourcesQuery = caseResourcesQuery;
   } else if (entityType === "Client") {
-    resourcesQuery = useClientResources(entityId, queryParams, !!entityId);
+    resourcesQuery = clientResourcesQuery;
   } else if (entityType === "Office") {
-    resourcesQuery = useOfficeResources(queryParams as any, {
-      enabled: !!entityId,
-    });
+    resourcesQuery = officeResourcesQuery;
   } else {
-    // For other entity types, we'll need to add hooks as needed
-    // For now, use a placeholder
-    resourcesQuery = { data: null, isLoading: false, isError: false, refetch: () => {} };
+    // For other entity types, use a placeholder
+    resourcesQuery = {
+      data: null,
+      isLoading: false,
+      isError: false,
+      refetch: () => {},
+    };
   }
 
   const {
@@ -703,7 +721,9 @@ export default function FileManager({
                       </td>
 
                       {/* Name */}
-                      <td className="px-6 py-5">
+                      <div className="px-6 py-5" 
+                      
+                      >
                         <div className="flex items-center gap-3 max-w-95">
                           <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                             {isFolder ? (
@@ -725,7 +745,7 @@ export default function FileManager({
                             </div>
                           </div>
                         </div>
-                      </td>
+                      </div>
 
                       {/* Type */}
                       <td className="px-6 py-5 whitespace-nowrap">
@@ -825,7 +845,10 @@ export default function FileManager({
                                 }}
                                 className="group inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-blue-200/70 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-all focus:outline-none focus:ring-4 focus:ring-blue-200/70 active:scale-[0.98] disabled:opacity-50"
                               >
-                                <FolderOpen size={16} className="text-blue-700" />
+                                <FolderOpen
+                                  size={16}
+                                  className="text-blue-700"
+                                />
                               </button>
                               <button
                                 type="button"
@@ -867,8 +890,8 @@ export default function FileManager({
       {totalPages > 1 && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-5 rounded-3xl border border-gray-200/60 bg-white/80 backdrop-blur-xl px-6 py-4 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] ring-1 ring-gray-200/50 mt-6">
           <div className="text-sm font-medium text-gray-500">
-            صفحة <span className="font-bold text-gray-900">{pageNumber}</span> من{" "}
-            <span className="font-bold text-gray-900">{totalPages}</span>
+            صفحة <span className="font-bold text-gray-900">{pageNumber}</span>{" "}
+            من <span className="font-bold text-gray-900">{totalPages}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -969,4 +992,3 @@ export default function FileManager({
     </section>
   );
 }
-

@@ -22,9 +22,9 @@ export type EntityType = "Case" | "Client" | "Session" | "Task" | "Court" | "Off
 export interface UploadFileRequest {
   file: File;
   entityType: EntityType;
-  entityId: number;
-  folderId?: number;
-  displayName: string;
+  entityId: number | null ;
+  folderId?: number | null;
+  displayName: string | undefined;
   description?: string;
 }
 

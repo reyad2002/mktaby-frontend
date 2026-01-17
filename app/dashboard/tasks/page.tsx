@@ -676,7 +676,7 @@ export default function TasksPage() {
         </div>
 
         {/* Deleted toggle (segment like Sessions) */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             حالة السجلات
           </label>
@@ -710,7 +710,7 @@ export default function TasksPage() {
               );
             })}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Table / States */}

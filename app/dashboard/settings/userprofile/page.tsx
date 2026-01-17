@@ -17,6 +17,11 @@ import {
   Edit,
   ArrowRight,
   AlertCircle,
+  RefreshCcw,
+  BadgeCheck,
+  IdCard,
+  ClipboardCopy,
+  Check,
   Sparkles,
 } from "lucide-react";
 
@@ -27,62 +32,98 @@ import {
 import { getPermissionById } from "@/features/permissions/apis/permissionsApi";
 import { setPermissions } from "@/features/permissions/permissionsSlice";
 import EditProfileForm from "@/features/userprofile/components/EditProfileForm";
-
 import { useDispatch } from "react-redux";
-type TabKey = "basic" | "meta";
+
+type TabKey = "overview" | "system";
+
+/* ===================== NEW DESIGN SYSTEM ===================== */
+const ui = {
+  // Page Background
+  page: "max-w-7xl mx-auto space-y-8 pb-20 pt-6 px-4 sm:px-6",
+
+  // Cards
+  card: "group relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-[0_2px_20px_rgb(0,0,0,0.04)] transition-all duration-300",
+  cardHover: "hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)]",
+
+  // Buttons
+  btnPrimary:
+    "inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 cursor-pointer hover:shadow-primary/10 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+  btnGhost:
+    "inline-flex items-center justify-center gap-2 rounded-2xl border border-transparent bg-transparent px-5 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+  btnLight:
+    "inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-100 bg-primary px-5 py-3 text-sm font-bold text-white cursor-pointer hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+
+  // Status Chips
+  chip: "inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50/80 px-3 py-1 text-xs font-bold text-gray-700 backdrop-blur-sm",
+
+  // Icons
+  iconSoft:
+    "inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100/50",
+
+  // Inputs/Interactive
+  tabBase:
+    "flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-200",
+  tabActive: "bg-white text-indigo-600 shadow-sm ring-1 ring-gray-200",
+  tabInactive: "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50",
+};
+
+function formatDateLong(value?: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("ar-EG", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function safeText(v?: string | null) {
+  return v && String(v).trim() ? String(v) : "—";
+}
 
 export default function UserProfilePage() {
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
-  const [tab, setTab] = useState<TabKey>("basic");
+  const [tab, setTab] = useState<TabKey>("overview");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, error, isFetching } = useQuery({
+  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
     queryKey: ["currentUser"],
     queryFn: getCurrentUser,
   });
 
   const user = data?.data;
 
-  // Note: Permission details API returns 403 Forbidden
   const { data: permissionData } = useQuery({
     queryKey: ["permission", user?.userPermissionId],
     queryFn: () => getPermissionById(user!.userPermissionId),
     enabled: !!user?.userPermissionId,
   });
 
-  // Update permissions in Redux when permission data changes
   useEffect(() => {
-    if (permissionData) {
-      dispatch(setPermissions(permissionData));
-    }
+    if (permissionData) dispatch(setPermissions(permissionData));
   }, [permissionData, dispatch]);
 
-  const createdAtText = useMemo(() => {
-    if (!user?.createdAt) return "—";
-    return new Date(user?.createdAt).toLocaleDateString("ar-EG", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }, [user?.createdAt]);
+  const createdAtText = useMemo(
+    () => formatDateLong(user?.createdAt),
+    [user?.createdAt]
+  );
 
   const uploadImageMutation = useMutation({
     mutationFn: ({ id, file }: { id: number; file: File }) =>
       setProfileImage(id, file),
     onSuccess: (res) => {
       if (res.succeeded) {
-        toast.success("تم تحديث صورة الملف الشخصي بنجاح");
+        toast.success("تم تحديث الصورة بنجاح");
         queryClient.invalidateQueries({ queryKey: ["currentUser"] });
       } else {
-        toast.error(res.message || "فشل تحديث صورة الملف الشخصي");
+        toast.error(res.message || "فشل التحديث");
       }
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "حدث خطأ أثناء تحميل الصورة");
+      toast.error(err?.response?.data?.message || "حدث خطأ");
     },
   });
 
@@ -93,7 +134,7 @@ export default function UserProfilePage() {
     if (!file || !user) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("يرجى اختيار ملف صورة صحيح");
+      toast.error("يرجى اختيار ملف صورة");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -104,146 +145,142 @@ export default function UserProfilePage() {
     uploadImageMutation.mutate({ id: user.id, file });
   };
 
-  /* ---------------- Loading (Skeleton) ---------------- */
+  /* ===================== LOADING STATE ===================== */
   if (isLoading) {
     return (
-      <section className="space-y-6 max-w-6xl mx-auto">
-        <SkeletonHero />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section className={ui.page}>
+        <div className="flex items-center justify-between mb-8 animate-pulse">
+          <div className="h-8 w-48 bg-gray-200 rounded-xl" />
+          <div className="h-10 w-32 bg-gray-200 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-4 space-y-6">
-            <SkeletonCard height={360} />
+            <SkeletonCard height={480} />
           </div>
           <div className="lg:col-span-8 space-y-6">
-            <SkeletonCard height={56} />
-            <SkeletonCard height={320} />
+            <SkeletonCard height={300} />
+            <SkeletonCard height={200} />
           </div>
         </div>
       </section>
     );
   }
 
-  /* ---------------- Error ---------------- */
+  /* ===================== ERROR STATE ===================== */
   if (isError || !user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <AlertCircle className="text-red-600" size={48} />
-        <p className="text-red-700 text-lg">حدث خطأ أثناء جلب بيانات الحساب</p>
-        <p className="text-gray-600 text-sm">
-          {error instanceof Error ? error.message : "خطأ غير معروف"}
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-red-50 text-red-600 ring-8 ring-red-50/50">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">
+          فشل في تحميل البيانات
+        </h2>
+        <p className="text-gray-500 max-w-md text-center">
+          {error instanceof Error ? error.message : "حدث خطأ غير متوقع"}
         </p>
+        <button onClick={() => refetch()} className={ui.btnGhost}>
+          <RefreshCcw size={18} />
+          إعادة المحاولة
+        </button>
       </div>
     );
   }
 
+  /* ===================== MAIN UI ===================== */
   return (
-    <section className="space-y-6 max-w-6xl mx-auto relative">
-      {/* HERO */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="relative px-6 py-6 sm:py-8">
-          {/* background */}
-          <div className="absolute inset-0">
-            <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-blue-200/40 blur-3xl" />
-            <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-indigo-200/40 blur-3xl" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(2,6,23,0.04)_1px,transparent_0)] [background-size:18px_18px]" />
+    <section className={ui.page}>
+      {/* --- HEADER --- */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-200/60">
+        <div>
+          <div className="flex items-center gap-3 text-indigo-600 mb-2">
+            {/* <Sparkles size={18} /> */}
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">
+              الملف الشخصي
+            </span>
           </div>
-
-          <div className="relative flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
-                <Sparkles size={14} />
-                إعدادات الحساب
-              </div>
-
-              <h1 className="text-3xl font-semibold text-gray-900">
-                الملف الشخصي
-              </h1>
-
-              <p className="text-sm text-gray-600">
-                إدارة بيانات حسابك وتحديث صورة الملف الشخصي بسهولة.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                {isFetching && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-50 text-gray-700 border border-gray-200 text-xs">
-                    <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                    يتم التحديث...
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Desktop edit button */}
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-              >
-                <Edit size={18} />
-                تعديل البيانات
-              </button>
-            )}
-          </div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            مرحباً، {user.name.split(" ")[0]}
+          </h1>
+          <p className="text-gray-500 mt-1 font-medium">
+            تحكم في بيانات حسابك وتفضيلاتك الشخصية.
+          </p>
         </div>
-      </div>
 
-      {/* Floating Edit Button (Mobile, RTL-safe + Safe-area) */}
-      {!isEditing && (
-        <button
-          onClick={() => setIsEditing(true)}
-          className="sm:hidden fixed z-50 inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-900 text-white font-semibold shadow-xl hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-          style={{
-            insetInlineEnd: "16px",
-            bottom: "calc(16px + env(safe-area-inset-bottom))",
-          }}
-        >
-          <Edit size={18} />
-          تعديل
-        </button>
-      )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className={`${ui.btnGhost} !px-3`}
+            title="تحديث البيانات"
+          >
+            <RefreshCcw
+              size={20}
+              className={
+                isFetching ? "animate-spin text-indigo-600" : "text-gray-400"
+              }
+            />
+          </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT: Profile Card (بدون تكرار) */}
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-            <div className="relative h-24 bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900">
-              <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_0)] [background-size:16px_16px]" />
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className={ui.btnPrimary}
+            >
+              <Edit size={18} />
+              <span>تعديل الملف</span>
+            </button>
+          ) : (
+            <button onClick={() => setIsEditing(false)} className={ui.btnLight}>
+              <ArrowRight size={18} />
+              <span>العودة للملف</span>
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className=" flex flex-col gap-8 ">
+        {/* --- LEFT COLUMN: PROFILE CARD --- */}
+        {/* <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
+          <div className={`${ui.card} ${ui.cardHover} text-center`}>
+      
+            <div className="h-32 bg-gradient-to-br from-primary to-slate-900 relative">
+              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
             </div>
 
-            <div className="p-6 -mt-10">
-              <div className="flex items-end justify-between gap-4">
-                <div className="relative">
-                  <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-gray-50">
+            <div className="px-6 pb-8 relative">
+           
+              <div className="relative -mt-16 mb-4 inline-block">
+                <div className="relative w-32 h-32 rounded-[2rem] p-1 bg-white ring-4 ring-white shadow-xl overflow-hidden">
+                  <div className="relative w-full h-full rounded-[1.8rem] overflow-hidden bg-gray-100">
                     {user.imageURL ? (
                       <Image
                         src={user.imageURL}
                         alt="Profile"
                         fill
                         className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        priority
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500">
-                        <User size={34} />
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <User size={48} />
                       </div>
                     )}
-
-                    <button
-                      type="button"
-                      onClick={handlePickImage}
-                      disabled={uploadImageMutation.isPending}
-                      className="absolute bottom-2 left-2 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-gray-200 shadow-sm hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60"
-                      title="تغيير الصورة"
-                    >
-                      {uploadImageMutation.isPending ? (
-                        <Loader2
-                          className="animate-spin text-blue-600"
-                          size={18}
-                        />
-                      ) : (
-                        <Camera className="text-gray-800" size={18} />
-                      )}
-                    </button>
                   </div>
 
+                
+                  <button
+                    onClick={handlePickImage}
+                    disabled={uploadImageMutation.isPending}
+                    className="absolute bottom-2 right-2 p-2 rounded-xl bg-gray-900 text-white shadow-lg hover:bg-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-70"
+                  >
+                    {uploadImageMutation.isPending ? (
+                      <Loader2 className="animate-spin" size={16} />
+                    ) : (
+                      <Camera size={16} />
+                    )}
+                  </button>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -252,74 +289,48 @@ export default function UserProfilePage() {
                     className="hidden"
                   />
                 </div>
-
-                <div className="text-left">
-                  <div className="text-xs text-gray-500">معرف المستخدم</div>
-                  <div className="text-sm font-semibold text-gray-900">
-                    #{user.id}
-                  </div>
-                </div>
               </div>
 
-              <div className="mt-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {user.name}
+          
+              <div className="space-y-1 mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {safeText(user.name)}
                 </h2>
-                <p className="text-sm text-gray-600 wrap-break-word">
+                <p className="text-sm font-medium text-gray-500">
                   {user.email}
                 </p>
               </div>
 
-              <div className="mt-5 space-y-3">
-                <KeyLine
-                  icon={Building2}
-                  label="المكتب"
-                  value={user.officeName || "—"}
-                />
-                <KeyLine
-                  icon={Phone}
-                  label="رقم الهاتف"
-                  value={user.phoneNumber || "—"}
-                  dir="ltr"
-                />
-                <KeyLine
-                  icon={Shield}
-                  label="الصلاحية"
-                  value={user.userPermissionName || "—"}
-                />
-                <KeyLine
-                  icon={Calendar}
-                  label="تاريخ الإنشاء"
-                  value={createdAtText}
-                />
+         
+              <div className="flex flex-wrap justify-center gap-2 mb-6">
+                <span className={ui.chip}>
+                  <Hash size={12} className="text-gray-400" />
+                  ID: {user.id}
+                </span>
+               
+              </div>
+
+            
+              <div className="grid grid-cols-2 gap-3">
+                <CopyChip label="نسخ البريد" value={user.email} />
+                <CopyChip label="نسخ الهاتف" value={user.phoneNumber || ""} />
               </div>
             </div>
           </div>
-        </aside>
+        </aside> */}
 
-        {/* RIGHT: Details (Tabs + forms) */}
+        {/* --- RIGHT COLUMN: CONTENT --- */}
         <main className="lg:col-span-8 space-y-6">
           {isEditing ? (
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow p-6">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    تعديل الملف الشخصي
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    عدّل بياناتك ثم احفظ التغييرات.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                >
-                  <ArrowRight size={16} />
-                  رجوع
-                </button>
+            <div className={`${ui.card} p-8`}>
+              <div className="mb-6 pb-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900">
+                  تعديل البيانات
+                </h3>
+                <p className="text-sm text-gray-500">
+                  قم بتحديث معلوماتك الشخصية أدناه.
+                </p>
               </div>
-
               <EditProfileForm
                 user={user}
                 onCancel={() => setIsEditing(false)}
@@ -328,77 +339,89 @@ export default function UserProfilePage() {
             </div>
           ) : (
             <>
-              <SegmentedTabs<TabKey>
-                value={tab}
-                onChange={setTab}
-                options={[
-                  { key: "basic", label: "البيانات الأساسية" },
-                  { key: "meta", label: "بيانات النظام" },
-                ]}
-              />
-
-              {tab === "basic" ? (
-                <div className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow p-6">
-                  <div className="mb-5">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      البيانات الأساسية
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      معلوماتك الأساسية كما تظهر داخل النظام.
-                    </p>
+              {tab === "overview" && (
+                <div
+                  className={`${ui.card} ${ui.cardHover} p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500`}
+                >
+                  <div className="flex items-center gap-4 mb-8">
+                    <span className={ui.iconSoft}>
+                      <User size={20} />
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        التفاصيل الشخصية
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        البيانات المعروضة للآخرين في النظام
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field icon={User} label="الاسم" value={user.name} />
-                    <Field
-                      icon={Mail}
-                      label="البريد الإلكتروني"
-                      value={user.email}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <DataField
+                      label="الاسم الكامل"
+                      value={safeText(user.name)}
                     />
-                    <Field
-                      icon={Phone}
+                    <DataField
+                      label="البريد الإلكتروني"
+                      value={safeText(user.email)}
+                    />
+                    <DataField
                       label="رقم الهاتف"
-                      value={user.phoneNumber || "—"}
+                      value={safeText(user.phoneNumber)}
                       dir="ltr"
                     />
-                    <Field
-                      icon={Building2}
-                      label="المكتب"
-                      value={user.officeName || "—"}
+                    <DataField
+                      label="المكتب التابع له"
+                      value={safeText(user.officeName)}
                     />
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow p-6">
-                  <div className="mb-5">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      بيانات النظام
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      بيانات مرجعية للحساب داخل النظام.
-                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <StatCard
+                  <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className={ui.btnLight}
+                    >
+                      تحديث البيانات
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {tab === "system" && (
+                <div
+                  className={`${ui.card} ${ui.cardHover} p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500`}
+                >
+                  <div className="flex items-center gap-4 mb-8">
+                    <span className={ui.iconSoft}>
+                      <BadgeCheck size={20} />
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        حالة النظام
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        معلومات تقنية حول صلاحياتك وحسابك
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <SystemStat
                       icon={Hash}
-                      title="معرف المستخدم"
+                      label="ID المستخدم"
                       value={`#${user.id}`}
                     />
-                    <StatCard
-                      icon={Calendar}
-                      title="تاريخ الإنشاء"
-                      value={createdAtText}
-                    />
-                    <StatCard
+                    <SystemStat
                       icon={Shield}
-                      title="الصلاحية"
-                      value={user.userPermissionName || "—"}
+                      label="نوع الصلاحية"
+                      value={safeText(user.userPermissionName)}
+                      highlighted
                     />
-                    <StatCard
-                      icon={Building2}
-                      title="المكتب"
-                      value={user.officeName || "—"}
+                    <SystemStat
+                      icon={Calendar}
+                      label="تاريخ الانضمام"
+                      value={createdAtText}
                     />
                   </div>
                 </div>
@@ -411,77 +434,52 @@ export default function UserProfilePage() {
   );
 }
 
-/* ---------------- Segmented Tabs (RTL-safe) ---------------- */
+/* ===================== NEW COMPONENT PIECES ===================== */
 
-function SegmentedTabs<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T;
-  onChange: (v: T) => void;
-  options: Array<{ key: T; label: string }>;
-}) {
-  const activeIndex = Math.max(
-    0,
-    options.findIndex((o) => o.key === value)
-  );
+function CopyChip({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const canCopy = !!value;
+
+  const onCopy = async () => {
+    if (!canCopy) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      toast.success("تم النسخ");
+    } catch {
+      toast.error("تعذر النسخ");
+    }
+  };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-2">
-      <div className="relative grid grid-cols-2 gap-2">
-        <div
-          className="absolute top-0 bottom-0 rounded-xl bg-gray-900 transition-all duration-300 ease-out"
-          style={{
-            width: "calc(50% - 4px)",
-            insetInlineStart: activeIndex === 0 ? "0px" : "calc(50% + 4px)",
-          }}
-        />
-        {options.map((opt) => {
-          const isActive = opt.key === value;
-          return (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => onChange(opt.key)}
-              className={`relative z-10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-                isActive ? "text-white" : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <button
+      onClick={onCopy}
+      disabled={!canCopy}
+      className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all border ${
+        canCopy
+          ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+          : "border-transparent bg-gray-50 text-gray-400 cursor-not-allowed"
+      }`}
+    >
+      {copied ? (
+        <Check size={14} className="text-green-600" />
+      ) : (
+        <ClipboardCopy size={14} />
+      )}
+      {label}
+    </button>
   );
 }
 
-/* ---------------- UI Pieces ---------------- */
-
-function KeyLine({
-  icon: Icon,
-  label,
-  value,
-  dir,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
-  label: string;
-  value: string;
-  dir?: "ltr" | "rtl";
-}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SideInfoRow({ icon: Icon, label, value, dir }: any) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="p-2 rounded-xl bg-blue-50 border border-blue-200">
-        <Icon className="text-blue-700" size={16} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-gray-600">{label}</p>
-        <p
-          className="text-sm font-semibold text-gray-900 break-words"
-          dir={dir}
-        >
+    <div className="flex items-start gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+      <Icon size={18} className="text-gray-400 mt-0.5" />
+      <div>
+        <p className="text-xs font-semibold text-gray-500 mb-0.5">{label}</p>
+        <p className="text-sm font-bold text-gray-900" dir={dir}>
           {value}
         </p>
       </div>
@@ -489,89 +487,68 @@ function KeyLine({
   );
 }
 
-function Field({
-  icon: Icon,
+function DataField({
   label,
   value,
   dir,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
   label: string;
   value: string;
-  dir?: "ltr" | "rtl";
+  dir?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 hover:shadow-sm transition-shadow">
-      <div className="flex items-start gap-3">
-        <div className="p-2 rounded-xl bg-blue-50 border border-blue-200">
-          <Icon className="text-blue-700" size={18} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm text-gray-600">{label}</p>
-          <p className="mt-1 font-semibold text-gray-900 break-words" dir={dir}>
-            {value}
-          </p>
-        </div>
-      </div>
+    <div className="group rounded-2xl bg-gray-50/50 p-4 border border-transparent hover:border-indigo-100 hover:bg-indigo-50/30 transition-all">
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+        {label}
+      </p>
+      <p className="text-base font-bold text-gray-900" dir={dir}>
+        {value}
+      </p>
     </div>
   );
 }
 
-function StatCard({
-  icon: Icon,
-  title,
-  value,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
-  title: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-blue-50 border border-blue-200">
-          <Icon className="text-blue-700" size={18} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm text-gray-600">{title}</p>
-          <p className="text-gray-900 font-semibold break-words">{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------- Skeletons ---------------- */
-
-function SkeletonHero() {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 sm:p-8">
-      <div className="animate-pulse space-y-4">
-        <div className="h-6 w-40 rounded bg-gray-200" />
-        <div className="h-8 w-56 rounded bg-gray-200" />
-        <div className="h-4 w-80 rounded bg-gray-200" />
-        <div className="flex gap-2">
-          <div className="h-7 w-28 rounded bg-gray-200" />
-          <div className="h-7 w-28 rounded bg-gray-200" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SkeletonCard({ height = 220 }: { height?: number }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SystemStat({ icon: Icon, label, value, highlighted }: any) {
   return (
     <div
-      className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 animate-pulse"
+      className={`flex flex-col items-center justify-center p-6 rounded-3xl border text-center transition-all ${
+        highlighted
+          ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200"
+          : "bg-white border-gray-100 text-gray-900 hover:border-indigo-200"
+      }`}
+    >
+      <div
+        className={`mb-3 p-3 rounded-2xl ${
+          highlighted ? "bg-white/20" : "bg-gray-50 text-indigo-600"
+        }`}
+      >
+        <Icon size={24} />
+      </div>
+      <span
+        className={`text-xs font-bold mb-1 ${
+          highlighted ? "text-indigo-100" : "text-gray-500"
+        }`}
+      >
+        {label}
+      </span>
+      <span className="text-lg font-extrabold">{value}</span>
+    </div>
+  );
+}
+
+/* ===================== SKELETONS ===================== */
+function SkeletonCard({ height = 240 }: { height?: number }) {
+  return (
+    <div
+      className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm animate-pulse"
       style={{ height }}
     >
-      <div className="h-5 w-40 rounded bg-gray-200 mb-4" />
-      <div className="space-y-3">
-        <div className="h-4 w-full rounded bg-gray-200" />
-        <div className="h-4 w-5/6 rounded bg-gray-200" />
-        <div className="h-4 w-4/6 rounded bg-gray-200" />
+      <div className="h-6 w-32 rounded-lg bg-gray-100 mb-6" />
+      <div className="space-y-4">
+        <div className="h-4 w-full rounded-lg bg-gray-100" />
+        <div className="h-4 w-5/6 rounded-lg bg-gray-100" />
+        <div className="h-4 w-4/6 rounded-lg bg-gray-100" />
       </div>
     </div>
   );

@@ -118,7 +118,7 @@ export default function CaseDetailsPage() {
                   key={item.key}
                   onClick={() => setActiveTab(item.key)}
                   className={`
-                    relative flex items-center gap-2.5 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 whitespace-nowrap group
+                    relative flex items-center gap-2.5 px-6 py-3 rounded-2xl text-sm font-bold transition-all duration-300 whitespace-nowrap group cursor-pointer
                     ${
                       current
                         ? "bg-white text-primary shadow-lg shadow-black/10 scale-105 active:scale-95"

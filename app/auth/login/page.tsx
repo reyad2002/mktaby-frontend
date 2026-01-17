@@ -15,7 +15,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Logo and Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
               <Scale className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -29,7 +29,7 @@ export default function LoginPage() {
           {/* Login Form */}
           <LoginForm />
           {/* Footer Links */}
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               ليس لديك حساب؟{" "}
               <a
@@ -39,7 +39,7 @@ export default function LoginPage() {
                 سجل الآن
               </a>
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}

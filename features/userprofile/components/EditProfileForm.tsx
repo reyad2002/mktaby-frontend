@@ -66,80 +66,88 @@ export default function EditProfileForm({
     updateMutation.mutate(data);
   };
 
+  // Shared input style classes
+  const inputClasses = (hasError: boolean) => `
+    w-full px-4 py-3.5 rounded-xl border bg-white text-gray-900 placeholder-gray-400 
+    transition-all duration-200 outline-none
+    ${
+      hasError
+        ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+        : "border-gray-200 hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+    }
+  `;
+
+  const labelClasses = "flex items-center gap-2 text-sm font-bold text-gray-700 mb-2";
+  const iconClasses = "text-indigo-500";
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Name */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-400">
-            <User size={16} className="text-yellow-300" />
+        <div className="space-y-1">
+          <label className={labelClasses}>
+            <User size={16} className={iconClasses} />
             الاسم
           </label>
           <input
             type="text"
             {...register("name")}
-            className={`w-full px-4 py-3 rounded-xl border ${
-              errors.name
-                ? "border-red-500 bg-red-500/5"
-                : "border-white/10 bg-white/5"
-            } text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50`}
+            className={inputClasses(!!errors.name)}
             placeholder="أدخل الاسم"
           />
           {errors.name && (
-            <p className="text-red-400 text-sm">{errors.name.message}</p>
+            <p className="text-red-500 text-xs font-semibold mt-1 animate-in slide-in-from-top-1">
+              {errors.name.message}
+            </p>
           )}
         </div>
 
         {/* Email */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-400">
-            <Mail size={16} className="text-yellow-300" />
+        <div className="space-y-1">
+          <label className={labelClasses}>
+            <Mail size={16} className={iconClasses} />
             البريد الإلكتروني
           </label>
           <input
             type="email"
             {...register("email")}
-            className={`w-full px-4 py-3 rounded-xl border ${
-              errors.email
-                ? "border-red-500 bg-red-500/5"
-                : "border-white/10 bg-white/5"
-            } text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50`}
+            className={inputClasses(!!errors.email)}
             placeholder="أدخل البريد الإلكتروني"
           />
           {errors.email && (
-            <p className="text-red-400 text-sm">{errors.email.message}</p>
+            <p className="text-red-500 text-xs font-semibold mt-1 animate-in slide-in-from-top-1">
+              {errors.email.message}
+            </p>
           )}
         </div>
 
         {/* Phone */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-400">
-            <Phone size={16} className="text-yellow-300" />
+        <div className="space-y-1 md:col-span-2">
+          <label className={labelClasses}>
+            <Phone size={16} className={iconClasses} />
             رقم الهاتف
           </label>
           <input
             type="text"
             {...register("phoneNumber")}
-            className={`w-full px-4 py-3 rounded-xl border ${
-              errors.phoneNumber
-                ? "border-red-500 bg-red-500/5"
-                : "border-white/10 bg-white/5"
-            } text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50`}
+            className={inputClasses(!!errors.phoneNumber)}
             placeholder="أدخل رقم الهاتف"
             maxLength={11}
           />
           {errors.phoneNumber && (
-            <p className="text-red-400 text-sm">{errors.phoneNumber.message}</p>
+            <p className="text-red-500 text-xs font-semibold mt-1 animate-in slide-in-from-top-1">
+              {errors.phoneNumber.message}
+            </p>
           )}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 justify-end pt-4 border-t border-white/10">
+      <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-6 border-t border-gray-100">
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2.5 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-gray-200 bg-white text-gray-700 font-bold hover:bg-gray-50 hover:text-gray-900 transition-all active:scale-[0.98]"
         >
           <X size={18} />
           إلغاء
@@ -148,7 +156,7 @@ export default function EditProfileForm({
         <button
           type="submit"
           disabled={updateMutation.isPending}
-          className="px-6 py-2.5 rounded-xl bg-yellow-400 text-slate-900 hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-primary cursor-pointer text-white font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {updateMutation.isPending ? (
             <>

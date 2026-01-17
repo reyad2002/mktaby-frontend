@@ -43,7 +43,7 @@ export default function AddCaseSessionForm({
 
   const { data: sessionStatuses = [] } = useSessionStatuses();
 
-  const { data: courtsData } = useCourtDropdown({ PageSize: 100 });
+  const { data: courtsData } = useCourtDropdown({ PageSize: 1000 });
   const courts = courtsData?.data ?? [];
 
   const {

@@ -20,12 +20,18 @@ import {
 import toast from "react-hot-toast";
 
 import { getCaseById } from "@/features/cases/apis/casesApis";
-import { getCaseFees, deleteCaseFee } from "@/features/accounting/apis/CaseFeesApi";
+import {
+  getCaseFees,
+  deleteCaseFee,
+} from "@/features/accounting/apis/CaseFeesApi";
 import {
   getCaseExpenses,
   deleteCaseExpense,
 } from "@/features/accounting/apis/CaseExpensesApi";
-import { getFeePayments, deleteFeePayment } from "@/features/accounting/apis/FeePaymentApi";
+import {
+  getFeePayments,
+  deleteFeePayment,
+} from "@/features/accounting/apis/FeePaymentApi";
 
 import AddCaseFeeForm from "@/features/accounting/components/AddCaseFeeForm";
 import EditCaseFeeForm from "@/features/accounting/components/EditCaseFeeForm";
@@ -40,10 +46,16 @@ import type { FeePaymentDto } from "@/features/accounting/types/FeePaymentTypes"
 
 /* ─────────────────────────────── Utilities ─────────────────────────────── */
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(amount);
+  new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(
+    amount
+  );
 
 const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+  new Date(date).toLocaleDateString("ar-EG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 
 const getPaymentMethodLabel = (method: string) => {
   const methods: Record<string, string> = {
@@ -82,8 +94,9 @@ const ui = {
     "inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700",
 
   tableHead: "border-b border-slate-200",
-  row: "border-b border-slate-100 hover:bg-slate-50",
-  actionBtn: "p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors",
+  row: "border-b border-slate-100 hover:bg-slate-50/70 transition-colors",
+  actionBtn:
+    "p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors",
 };
 
 /* ─────────────────────────────── Modal Shell ─────────────────────────────── */
@@ -108,7 +121,10 @@ function ModalShell({
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+          >
             <X size={20} />
           </button>
         </div>
@@ -145,11 +161,23 @@ function ConfirmDeleteModal({
           </div>
         </div>
         <div className="flex items-center gap-3 mt-6">
-          <button onClick={onCancel} className={ui.btnGhost + " flex-1"} disabled={isLoading}>
+          <button
+            onClick={onCancel}
+            className={ui.btnGhost + " flex-1"}
+            disabled={isLoading}
+          >
             إلغاء
           </button>
-          <button onClick={onConfirm} className={ui.btnDanger + " flex-1"} disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+          <button
+            onClick={onConfirm}
+            className={ui.btnDanger + " flex-1"}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              <Trash2 size={16} />
+            )}
             حذف
           </button>
         </div>
@@ -164,21 +192,62 @@ function SummaryCard({
   value,
   icon: Icon,
   subtitle,
+  tone = "teal",
 }: {
   title: string;
   value: number;
   icon: typeof DollarSign;
   subtitle?: string;
+  tone?: "teal" | "indigo" | "amber" | "emerald" | "rose";
 }) {
+  const toneMap: Record<
+    string,
+    { box: string; iconWrap: string; ring: string }
+  > = {
+    teal: {
+      box: "bg-teal-50 border-teal-100",
+      iconWrap: "bg-white border-teal-200 text-teal-700",
+      ring: "ring-1 ring-teal-100",
+    },
+    indigo: {
+      box: "bg-indigo-50 border-indigo-100",
+      iconWrap: "bg-white border-indigo-200 text-indigo-700",
+      ring: "ring-1 ring-indigo-100",
+    },
+    amber: {
+      box: "bg-amber-50 border-amber-100",
+      iconWrap: "bg-white border-amber-200 text-amber-800",
+      ring: "ring-1 ring-amber-100",
+    },
+    emerald: {
+      box: "bg-emerald-50 border-emerald-100",
+      iconWrap: "bg-white border-emerald-200 text-emerald-700",
+      ring: "ring-1 ring-emerald-100",
+    },
+    rose: {
+      box: "bg-rose-50 border-rose-100",
+      iconWrap: "bg-white border-rose-200 text-rose-700",
+      ring: "ring-1 ring-rose-100",
+    },
+  };
+
+  const t = toneMap[tone];
+
   return (
-    <div className={ui.card + " p-4"}>
+    <div className={`rounded-2xl border shadow-sm p-4 ${t.box} ${t.ring}`}>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-medium text-slate-500">{title}</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(value)}</p>
-          {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+          <p className="text-xs font-medium text-slate-600">{title}</p>
+          <p className="mt-1 text-lg font-extrabold text-slate-900">
+            {formatCurrency(value)}
+          </p>
+          {subtitle && (
+            <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+          )}
         </div>
-        <span className={ui.iconBox}>
+        <span
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border ${t.iconWrap}`}
+        >
           <Icon size={18} />
         </span>
       </div>
@@ -210,19 +279,23 @@ function SectionCard({
     <div className={ui.card + " overflow-hidden"}>
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 hover:bg-slate-50 transition-colors"
+        className=" cursor-pointer bg-primary w-full flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 hover:bg-primary/90 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className={ui.iconBox}>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
             <Icon size={20} />
           </span>
-          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-slate-900">{formatCurrency(total)}</span>
+          <span className="text-xl font-bold text-slate-100">
+            {formatCurrency(total)}
+          </span>
           <ChevronDown
             size={20}
-            className={`text-slate-600 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`text-slate-100 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </div>
       </button>
@@ -233,7 +306,7 @@ function SectionCard({
           {onAdd && (
             <button
               onClick={onAdd}
-              className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-slate-300 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors"
+              className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-slate-300 bg-blue-200/50 text-slate-700 font-medium hover:bg-blue-200/40 transition-colors cursor-pointer "
             >
               <Plus size={18} />
               {addLabel || "إضافة جديد"}
@@ -265,12 +338,20 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
   const [showDeleteFee, setShowDeleteFee] = useState<number | null>(null);
 
   const [showAddExpense, setShowAddExpense] = useState(false);
-  const [showEditExpense, setShowEditExpense] = useState<CaseExpenseDto | null>(null);
-  const [showDeleteExpense, setShowDeleteExpense] = useState<number | null>(null);
+  const [showEditExpense, setShowEditExpense] = useState<CaseExpenseDto | null>(
+    null
+  );
+  const [showDeleteExpense, setShowDeleteExpense] = useState<number | null>(
+    null
+  );
 
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [showEditPayment, setShowEditPayment] = useState<FeePaymentDto | null>(null);
-  const [showDeletePayment, setShowDeletePayment] = useState<number | null>(null);
+  const [showEditPayment, setShowEditPayment] = useState<FeePaymentDto | null>(
+    null
+  );
+  const [showDeletePayment, setShowDeletePayment] = useState<number | null>(
+    null
+  );
 
   // Queries
   const { data: caseData, isLoading: caseLoading } = useQuery({
@@ -279,7 +360,11 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
     enabled: !!caseId,
   });
 
-  const { data: feesData, isLoading: feesLoading, isFetching: feesFetching } = useQuery({
+  const {
+    data: feesData,
+    isLoading: feesLoading,
+    isFetching: feesFetching,
+  } = useQuery({
     queryKey: ["caseFees", { CaseId: caseId }],
     queryFn: () => getCaseFees({ CaseId: caseId, PageSize: 100 }),
     enabled: !!caseId,
@@ -371,15 +456,23 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
   // NOTE: kept as-is from your original logic
   const totalDue = totalFees - totalExpenses;
   const balance = totalDue - totalPayments;
-  const paymentPercentage = totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
+  const paymentPercentage =
+    totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
 
-  const isLoading = caseLoading || feesLoading || expensesLoading || paymentsLoading;
+  const isLoading =
+    caseLoading || feesLoading || expensesLoading || paymentsLoading;
   const isFetching = feesFetching || expensesFetching || paymentsFetching;
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["caseFees", { CaseId: caseId }] });
-    queryClient.invalidateQueries({ queryKey: ["caseExpenses", { CaseId: caseId }] });
-    queryClient.invalidateQueries({ queryKey: ["feePayments", { CaseId: caseId }] });
+    queryClient.invalidateQueries({
+      queryKey: ["caseFees", { CaseId: caseId }],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["caseExpenses", { CaseId: caseId }],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["feePayments", { CaseId: caseId }],
+    });
     toast.success("جاري تحديث البيانات...");
   };
 
@@ -403,15 +496,26 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
               <Wallet className="text-white" size={22} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">المحاسبة المالية</h1>
+              <h1 className="text-xl font-bold text-slate-900">
+                المحاسبة المالية
+              </h1>
               <p className="text-sm text-slate-500">
-                {caseDetails?.name || "القضية"} - {caseDetails?.caseNumber || ""}
+                {caseDetails?.name || "القضية"} -{" "}
+                {caseDetails?.caseNumber || ""}
               </p>
             </div>
           </div>
 
-          <button onClick={handleRefresh} className={ui.btnGhost} disabled={isFetching}>
-            {isFetching ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+          <button
+            onClick={handleRefresh}
+            className={ui.btnGhost}
+            disabled={isFetching}
+          >
+            {isFetching ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              <RefreshCw size={16} />
+            )}
             تحديث
           </button>
         </div>
@@ -419,7 +523,12 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <SummaryCard title="الأتعاب" value={totalFees} icon={Receipt} subtitle={`${fees.length} رسم`} />
+        <SummaryCard
+          title="الأتعاب"
+          value={totalFees}
+          icon={Receipt}
+          subtitle={`${fees.length} رسم`}
+        />
         <SummaryCard
           title="المصاريف"
           value={totalExpenses}
@@ -444,13 +553,17 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
       {/* Progress Bar */}
       <div className={ui.card + " p-5"}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-slate-700">نسبة السداد</span>
-          <span className="text-sm font-bold text-teal-700">{paymentPercentage}%</span>
+          <span className="text-sm font-medium text-slate-700">
+            نسبة السداد
+          </span>
+          <span className="text-sm font-bold text-teal-700">
+            {paymentPercentage}%
+          </span>
         </div>
 
-        <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+        <div className="h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
           <div
-            className="h-full bg-teal-600 rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-teal-500 to-emerald-500"
             style={{ width: `${Math.min(paymentPercentage, 100)}%` }}
           />
         </div>
@@ -475,31 +588,41 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
           <div className="text-center py-8">
             <Receipt size={40} className="mx-auto text-slate-300 mb-2" />
             <p className="text-slate-700 font-medium">لا توجد رسوم مضافة</p>
-            <p className="text-sm text-slate-500 mt-1">ابدأ بإضافة الرسوم للقضية</p>
+            <p className="text-sm text-slate-500 mt-1">
+              ابدأ بإضافة الرسوم للقضية
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className={ui.tableHead}>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">الوصف</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    الوصف
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    المبلغ
+                  </th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     تاريخ الاستحقاق
                   </th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {fees.map((fee) => (
-                  <tr key={fee.id} className={ui.row}>
+                {fees.map((fee, idx) => (
+                <tr key={fee.id} className={`${ui.row} ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
                     <td className="py-3 px-3 text-slate-900">
                       {fee.description || `رسم #${fee.id}`}
                     </td>
                     <td className="py-3 px-3 font-semibold text-slate-900">
                       {formatCurrency(fee.amount)}
                     </td>
-                    <td className="py-3 px-3 text-slate-600">{formatDate(fee.toBePaidAt)}</td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {formatDate(fee.toBePaidAt)}
+                    </td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -540,21 +663,27 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
           <div className="text-center py-8">
             <TrendingDown size={40} className="mx-auto text-slate-300 mb-2" />
             <p className="text-slate-700 font-medium">لا توجد مصاريف مضافة</p>
-            <p className="text-sm text-slate-500 mt-1">ابدأ بإضافة المصاريف للقضية</p>
+            <p className="text-sm text-slate-500 mt-1">
+              ابدأ بإضافة المصاريف للقضية
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className={ui.tableHead}>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    المبلغ
+                  </th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     تاريخ المصروف
                   </th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     تاريخ الإضافة
                   </th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -563,8 +692,12 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
                     <td className="py-3 px-3 font-semibold text-slate-900">
                       {formatCurrency(expense.amount)}
                     </td>
-                    <td className="py-3 px-3 text-slate-600">{formatDate(expense.expenseDate)}</td>
-                    <td className="py-3 px-3 text-slate-600">{formatDate(expense.createdAt)}</td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {formatDate(expense.expenseDate)}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {formatDate(expense.createdAt)}
+                    </td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -605,36 +738,54 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className={ui.card + " p-3"}>
             <p className="text-xs text-slate-500 mb-1">المدفوع</p>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPayments)}</p>
+            <p className="text-lg font-bold text-slate-900">
+              {formatCurrency(totalPayments)}
+            </p>
           </div>
           <div className={ui.card + " p-3"}>
             <p className="text-xs text-slate-500 mb-1">المتبقي</p>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(Math.max(balance, 0))}</p>
+            <p className="text-lg font-bold text-slate-900">
+              {formatCurrency(Math.max(balance, 0))}
+            </p>
           </div>
           <div className={ui.card + " p-3"}>
             <p className="text-xs text-slate-500 mb-1">نسبة السداد</p>
-            <p className="text-lg font-bold text-slate-900">{paymentPercentage}%</p>
+            <p className="text-lg font-bold text-slate-900">
+              {paymentPercentage}%
+            </p>
           </div>
         </div>
 
         {payments.length === 0 ? (
           <div className="text-center py-8">
             <CreditCard size={40} className="mx-auto text-slate-300 mb-2" />
-            <p className="text-slate-700 font-medium">لم تتم أي دفعات حتى الآن</p>
-            <p className="text-sm text-slate-500 mt-1">ابدأ بتسجيل دفعة جديدة</p>
+            <p className="text-slate-700 font-medium">
+              لم تتم أي دفعات حتى الآن
+            </p>
+            <p className="text-sm text-slate-500 mt-1">
+              ابدأ بتسجيل دفعة جديدة
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className={ui.tableHead}>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">التاريخ</th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">المبلغ</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    التاريخ
+                  </th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    المبلغ
+                  </th>
                   <th className="text-right py-3 px-3 text-slate-700 font-semibold">
                     طريقة الدفع
                   </th>
-                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">الحالة</th>
-                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">الإجراءات</th>
+                  <th className="text-right py-3 px-3 text-slate-700 font-semibold">
+                    الحالة
+                  </th>
+                  <th className="text-center py-3 px-3 text-slate-700 font-semibold">
+                    الإجراءات
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -643,7 +794,9 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
                   return (
                     <tr key={payment.id} className={ui.row}>
-                      <td className="py-3 px-3 text-slate-900">{formatDate(payment.paymentDate)}</td>
+                      <td className="py-3 px-3 text-slate-900">
+                        {formatDate(payment.paymentDate)}
+                      </td>
                       <td className="py-3 px-3 font-semibold text-slate-900">
                         {formatCurrency(payment.amount)}
                       </td>
@@ -652,7 +805,9 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
                       </td>
                       <td className="py-3 px-3">
                         <div className={ui.badge}>
-                          <span className={`h-2 w-2 rounded-full ${statusInfo.dot}`} />
+                          <span
+                            className={`h-2 w-2 rounded-full ${statusInfo.dot}`}
+                          />
                           <span>{statusInfo.label}</span>
                         </div>
                       </td>
@@ -726,7 +881,10 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Add Expense Modal */}
       {showAddExpense && (
-        <ModalShell onClose={() => setShowAddExpense(false)} title="إضافة مصروف جديد">
+        <ModalShell
+          onClose={() => setShowAddExpense(false)}
+          title="إضافة مصروف جديد"
+        >
           <AddCaseExpenseForm
             defaultCaseId={caseId}
             onSuccess={() => {
@@ -740,7 +898,10 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Edit Expense Modal */}
       {showEditExpense && (
-        <ModalShell onClose={() => setShowEditExpense(null)} title="تعديل المصروف">
+        <ModalShell
+          onClose={() => setShowEditExpense(null)}
+          title="تعديل المصروف"
+        >
           <EditCaseExpenseForm
             expenseId={showEditExpense.id}
             defaultCaseId={caseId}
@@ -766,7 +927,10 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Add Payment Modal */}
       {showAddPayment && (
-        <ModalShell onClose={() => setShowAddPayment(false)} title="إضافة دفعة جديدة">
+        <ModalShell
+          onClose={() => setShowAddPayment(false)}
+          title="إضافة دفعة جديدة"
+        >
           <AddFeePaymentForm
             defaultCaseId={caseId}
             onSuccess={() => {
@@ -780,7 +944,10 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
       {/* Edit Payment Modal */}
       {showEditPayment && (
-        <ModalShell onClose={() => setShowEditPayment(null)} title="تعديل الدفعة">
+        <ModalShell
+          onClose={() => setShowEditPayment(null)}
+          title="تعديل الدفعة"
+        >
           <EditFeePaymentForm
             paymentId={showEditPayment.id}
             defaultCaseId={caseId}

@@ -533,7 +533,7 @@ export default function CaseSessions({ caseId }: CaseSessionsProps) {
       fetchSessionsList({
         CaseId: caseId,
         PageNumber: 1,
-        PageSize: 50,
+        PageSize: 500,
         Sort: "sessionDate desc",
       }),
     enabled: Number.isFinite(caseId) && caseId > 0,
@@ -676,7 +676,13 @@ export default function CaseSessions({ caseId }: CaseSessionsProps) {
           <AddCaseSessionForm
             caseId={caseId}
             caseName={caseDetails?.name}
-            onSuccess={() => setShowAddModal(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({
+                queryKey: ["caseSessions", caseId],
+              });
+              queryClient.invalidateQueries({ queryKey: ["sessions"] });
+              setShowAddModal(false);
+            }}
             onCancel={() => setShowAddModal(false)}
           />
         </ModalShell>

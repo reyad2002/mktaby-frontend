@@ -43,6 +43,7 @@ import {
   useRestoreFolder,
 } from "@/features/folder/hooks/folderHooks";
 import { useRouter } from "next/navigation";
+import UploadFiles from "@/features/fileAtt/components/uploadFiles";
 // ===== helpers =====
 const formatDateAr = (date?: string | null) =>
   date ? new Date(date).toLocaleDateString("ar-EG") : "—";
@@ -645,7 +646,7 @@ export default function Page() {
     if (next < 1 || next > totalPages) return;
     setPageNumber(next);
   };
-
+  const [uploadOpen, setUploadOpen] = useState(false);
   return (
     <section className="space-y-6 relative">
       {/* Soft premium background */}
@@ -683,6 +684,23 @@ export default function Page() {
         <label className="block text-sm font-bold text-gray-700 mb-2 mr-1">
           بحث
         </label>
+        {/* <button
+          onClick={() => setUploadOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white"
+        >
+          إضافة ملف
+        </button>
+        <UploadFiles
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          entityType={"Office"}
+          entityId={null}
+          folderId={null}
+          onSuccess={() => {
+            setUploadOpen(false);
+            refetch();
+          }}
+        /> */}
         <div className="relative group">
           <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors">
             <Search size={20} />
@@ -760,7 +778,7 @@ export default function Page() {
                       </td>
 
                       {/* Name */}
-                      <td className="px-6 py-5">
+                      <div className="px-6 py-5">
                         <div className="flex items-center gap-3 max-w-95">
                           <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 shadow-sm">
                             {isFolder ? (
@@ -782,7 +800,7 @@ export default function Page() {
                             </div>
                           </div>
                         </div>
-                      </td>
+                      </div>
 
                       {/* Type */}
                       <td className="px-6 py-5 whitespace-nowrap">
@@ -903,10 +921,10 @@ export default function Page() {
                                 >
                                   <div className="group inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-blue-200/70 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-all focus:outline-none focus:ring-4 focus:ring-blue-200/70 active:scale-[0.98] disabled:opacity-50">
                                     <FolderOpen
-                                    size={16}
-                                    className="text-blue-700"
-                                  />
-                                    </div> 
+                                      size={16}
+                                      className="text-blue-700"
+                                    />
+                                  </div>
                                 </button>
                                 <button
                                   type="button"

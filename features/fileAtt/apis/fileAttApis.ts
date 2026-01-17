@@ -24,14 +24,21 @@ import type {
 // Post /Files - Upload file
 // ===========================
 export async function uploadFile(
-  data: UploadFileRequest
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data : any
 ): Promise<UploadFileResponse> {
   const formData = new FormData();
   formData.append("File", data.file);
   formData.append("EntityType", data.entityType);
-  formData.append("EntityId", data.entityId.toString());
+
+  // Ensure entityId is not null before appending
+  if (data.entityId === null) {
+    throw new Error("EntityId is required and cannot be null");
+  }
+  formData.append("EntityId", data.entityId);
+
   if (data.folderId) {
-    formData.append("FolderId", data.folderId.toString());
+    formData.append("FolderId", data.folderId );
   }
   formData.append("DisplayName", data.displayName);
   if (data.description) {

@@ -26,8 +26,9 @@ function LoginForm() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      // نقلت القيم هنا لضمان عمل الفورم بشكل صحيح
+      email: "Mo7amed6102003@gmail.com",
+      password: "12345678",
     },
   });
 
@@ -36,7 +37,6 @@ function LoginForm() {
       login(data.email, data.password, "browser-device", "Browser"),
     onSuccess: (response) => {
       if (response.succeeded && response.data) {
-        // Use secure token storage
         setTokens(response.data);
         toast.success(response.message || "تم تسجيل الدخول بنجاح");
         router.push("/dashboard");
@@ -62,55 +62,83 @@ function LoginForm() {
     setShowPassword((prev) => !prev);
   }, []);
 
+  // Shared classes for inputs to match the system design
+  const inputClasses = (hasError: boolean) => `
+    w-full pl-12 pr-12 py-3.5 rounded-xl border bg-gray-50/50 text-gray-900 placeholder-gray-400 
+    transition-all duration-200 outline-none
+    ${
+      hasError
+        ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+        : "border-gray-200 hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 bg-white"
+    }
+  `;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div>
+      
+      {/* Email Field */}
+      <div className="space-y-1.5">
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-sm font-bold text-gray-700"
         >
           البريد الإلكتروني
         </label>
-        <div className="relative">
+        <div className="relative group">
           <input
             type="email"
             id="email"
-            value="Mo7amed6102003@gmail.com"
             {...register("email")}
-            className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.email ? "border-red-500" : "border-gray-300"
-            }`}
+            className={inputClasses(!!errors.email)}
             placeholder="أدخل البريد الإلكتروني"
+            dir="ltr" // Force LTR for email input typically
           />
-          <Mail className="absolute left-3 top-2.5 text-gray-400" size={20} />
+          {/* Icon Positioned Logic: Assuming Arabic UI, primary icon on Right (Start) */}
+          <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+            <Mail 
+              size={20} 
+              className={`transition-colors ${errors.email ? "text-red-400" : "text-gray-400 group-focus-within:text-primary"}`} 
+            />
+          </div>
         </div>
         {errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          <p className="text-red-500 text-xs font-bold mt-1 animate-in slide-in-from-top-1">
+            {errors.email.message}
+          </p>
         )}
       </div>
-      <div>
+
+      {/* Password Field */}
+      <div className="space-y-1.5">
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-sm font-bold text-gray-700"
         >
           كلمة المرور
         </label>
-        <div className="relative">
+        <div className="relative group">
           <input
             type={showPassword ? "text" : "password"}
             id="password"
-            value="12345678"
             {...register("password")}
-            className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.password ? "border-red-500" : "border-gray-300"
-            }`}
+            className={inputClasses(!!errors.password)}
             placeholder="أدخل كلمة المرور"
+            dir="ltr"
           />
-          <Lock className="absolute left-3 top-2.5 text-gray-400" size={20} />
+          
+          {/* Main Icon (Lock) - Right Side */}
+          <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+            <Lock 
+               size={20} 
+               className={`transition-colors ${errors.password ? "text-red-400" : "text-gray-400 group-focus-within:text-primary"}`}
+            />
+          </div>
+
+          {/* Toggle Button (Eye) - Left Side */}
           <button
             type="button"
             onClick={togglePassword}
-            className="absolute right-3 top-2.5 text-gray-400 focus:outline-none"
+            className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 hover:text-primary focus:outline-none transition-colors"
             aria-label={
               showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
             }
@@ -119,18 +147,22 @@ function LoginForm() {
           </button>
         </div>
         {errors.password && (
-          <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+          <p className="text-red-500 text-xs font-bold mt-1 animate-in slide-in-from-top-1">
+            {errors.password.message}
+          </p>
         )}
       </div>
+
+      {/* Submit Button */}
       <button
         type="submit"
         disabled={loginMutation.isPending}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
+        className="w-full relative cursor-pointer overflow-hidden bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {loginMutation.isPending ? (
-          <Loader2 className="animate-spin ml-2" size={20} />
+          <Loader2 className="animate-spin" size={20} />
         ) : null}
-        تسجيل الدخول
+        <span>تسجيل الدخول</span>
       </button>
     </form>
   );

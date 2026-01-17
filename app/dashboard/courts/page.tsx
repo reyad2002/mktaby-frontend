@@ -616,7 +616,7 @@ export default function CourtsPage() {
         </div>
 
         {/* Status */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             حالة السجلات
           </label>
@@ -671,7 +671,7 @@ export default function CourtsPage() {
               );
             })}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Table */}
@@ -826,7 +826,7 @@ export default function CourtsPage() {
                           </>
                         ) : (
                           <IconButton
-                            title="أرشفة"
+                            title="حذف"
                             variant="orange"
                             disabled={softDeleteMutation.isPending}
                             onClick={() => handleSoftDelete(court.id, court.name)}
@@ -834,7 +834,7 @@ export default function CourtsPage() {
                             {softDeleteMutation.isPending ? (
                               <Loader2 size={16} className="animate-spin" />
                             ) : (
-                              <Archive size={16} strokeWidth={2.5} />
+                              <Trash2 size={16} strokeWidth={2.5} />
                             )}
                           </IconButton>
                         )}
@@ -958,21 +958,21 @@ export default function CourtsPage() {
         onConfirm={confirmDelete}
         title={
           deleteDialog.type === "soft"
-            ? "تأكيد الأرشفة"
+            ? "تأكيد الحذف"
             : deleteDialog.type === "hard"
             ? "تأكيد الحذف النهائي"
             : "تأكيد الاستعادة"
         }
         description={
           deleteDialog.type === "soft"
-            ? `هل تريد أرشفة المحكمة "${deleteDialog.court?.name}"؟ يمكن استعادتها لاحقاً.`
+            ? `هل تريد حذف المحكمة "${deleteDialog.court?.name}"؟ يمكن استعادتها لاحقاً.`
             : deleteDialog.type === "hard"
             ? `⚠️ تحذير: هل أنت متأكد من حذف المحكمة "${deleteDialog.court?.name}" نهائياً؟ لا يمكن التراجع عن هذا الإجراء!`
             : `هل تريد استعادة المحكمة "${deleteDialog.court?.name}"؟`
         }
         confirmText={
           deleteDialog.type === "soft"
-            ? "أرشفة"
+            ? "حذف"
             : deleteDialog.type === "hard"
             ? "حذف نهائي"
             : "استعادة"

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "مكتبي - نظام إدارة المكتب القانوني",
-    template: "%s | مكتبي",
+    default: "محاماة - نظام إدارة المكتب القانوني",
+    template: "%s | محاماة",
   },
   description:
     "نظام شامل لإدارة المكاتب القانونية - إدارة القضايا والعملاء والجلسات والمهام والمحاسبة",
@@ -27,10 +27,10 @@ export const metadata: Metadata = {
     "نظام قانوني",
     "إدارة عملاء",
     "جلسات محكمة",
-    "مكتبي",
+    "محاماة",
   ],
-  authors: [{ name: "مكتبي" }],
-  creator: "مكتبي",
+  authors: [{ name: "محاماة" }],
+  creator: "محاماة",
   robots: {
     index: true,
     follow: true,
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ar_EG",
-    siteName: "مكتبي",
-    title: "مكتبي - نظام إدارة المكتب القانوني",
+    siteName: "محاماة",
+    title: "محاماة - نظام إدارة المكتب القانوني",
     description:
       "نظام شامل لإدارة المكاتب القانونية - إدارة القضايا والعملاء والجلسات والمهام والمحاسبة",
   },

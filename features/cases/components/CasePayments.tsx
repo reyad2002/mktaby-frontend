@@ -455,7 +455,7 @@ export default function CasePayments({ caseId }: CasePaymentsProps) {
 
   // NOTE: kept as-is from your original logic
   const totalDue = totalFees - totalExpenses;
-  const balance = totalDue - totalPayments;
+  const balance = totalFees - totalPayments;
   const paymentPercentage =
     totalDue > 0 ? Math.round((totalPayments / totalDue) * 100) : 0;
 

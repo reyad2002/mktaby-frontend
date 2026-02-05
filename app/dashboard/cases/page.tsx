@@ -38,6 +38,7 @@ import {
 
 import EditCaseForm from "@/features/cases/components/EditCaseForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 
 import type {
   GetCasesQuery,
@@ -124,7 +125,7 @@ export function CustomSelect({
 
   const selected = options.find((o) => String(o.value) === String(value));
   const shownLabel =
-    value === "" ? placeholder : selected?.label ?? placeholder;
+    value === "" ? placeholder : (selected?.label ?? placeholder);
 
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -340,6 +341,7 @@ function IconButton({
 
 export default function CasesPage() {
   const router = useRouter();
+  const { can } = usePermissions();
 
   const [filters, setFilters] = useState<GetCasesQuery>(DEFAULT_FILTERS);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -382,7 +384,7 @@ export default function CasesPage() {
 
   const updateFilter = <K extends keyof GetCasesQuery>(
     key: K,
-    value: GetCasesQuery[K]
+    value: GetCasesQuery[K],
   ) => {
     setFilters((prev) => ({
       ...prev,
@@ -409,7 +411,7 @@ export default function CasesPage() {
   const handleHardDelete = (id: number, name: string) => {
     if (
       window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف القضية "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`
+        `⚠️ تحذير: هل أنت متأكد من حذف القضية "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
       )
     ) {
       hardDeleteMutation.mutate(id);
@@ -425,7 +427,7 @@ export default function CasesPage() {
   const handleArchive = (id: number, name: string) => {
     if (
       window.confirm(
-        `هل تريد أرشفة القضية "${name}"؟\nيمكن إلغاء الأرشفة لاحقاً.`
+        `هل تريد أرشفة القضية "${name}"؟\nيمكن إلغاء الأرشفة لاحقاً.`,
       )
     ) {
       archiveMutation.mutate(id);
@@ -454,9 +456,9 @@ export default function CasesPage() {
         icon={Briefcase}
         isFetching={isFetching}
         countLabel={`${totalCount} قضية`}
-        onAdd={() => router.push("/dashboard/cases/add")}
+        onAdd={can.canCreateCase() ? () => router.push("/dashboard/cases/add") : undefined}
         addButtonLabel="إضافة قضية"
-        finance={() => router.push("/dashboard/cases-finance")}
+        finance={can.canViewFinance() ? () => router.push("/dashboard/cases-finance") : undefined}
         financeLabel="المحاسبة المالية للقضايا"
       />
 
@@ -569,7 +571,7 @@ export default function CasesPage() {
                         onChange={(val) =>
                           updateFilter(
                             select.key,
-                            val === "" ? undefined : (val as never)
+                            val === "" ? undefined : (val as never),
                           )
                         }
                       />
@@ -795,7 +797,7 @@ export default function CasesPage() {
                     <td className="px-6 py-5 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border shadow-sm ${getStatusColor(
-                          caseItem.caseStatus.value
+                          caseItem.caseStatus.value,
                         )}`}
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
@@ -837,20 +839,22 @@ export default function CasesPage() {
                           <Eye size={16} strokeWidth={2.5} />
                         </IconButton>
 
-                        <IconButton
-                          title="تعديل"
-                          // className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all active:scale-90 shadow-sm"
-                          onClick={() => {
-                            setEditCaseId(caseItem.id);
-                            setShowEditModal(true);
-                          }}
-                        >
-                          <Pencil size={16} strokeWidth={2.5} />
-                        </IconButton>
+                        {can.canUpdateCase() && (
+                          <IconButton
+                            title="تعديل"
+                            onClick={() => {
+                              setEditCaseId(caseItem.id);
+                              setShowEditModal(true);
+                            }}
+                          >
+                            <Pencil size={16} strokeWidth={2.5} />
+                          </IconButton>
+                        )}
 
                         {filters.IsDeleted ? (
                           /* Deleted cases: Restore or Hard Delete */
                           <>
+                            {can.canUpdateCase() && (
                             <IconButton
                               title="استعادة"
                               variant="green"
@@ -865,7 +869,8 @@ export default function CasesPage() {
                                 <RotateCcw size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
-
+                            )}
+                            {can.canDeleteCase() && (
                             <IconButton
                               title="حذف نهائي"
                               variant="red"
@@ -880,10 +885,12 @@ export default function CasesPage() {
                                 <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
+                            )}
                           </>
                         ) : filters.IsArchived ? (
                           /* Archived cases: Unarchive or Delete */
                           <>
+                            {can.canUpdateCase() && (
                             <IconButton
                               title="إلغاء الأرشفة"
                               variant="green"
@@ -898,7 +905,8 @@ export default function CasesPage() {
                                 <RotateCcw size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
-
+                            )}
+                            {can.canDeleteCase() && (
                             <IconButton
                               title="حذف"
                               variant="red"
@@ -913,10 +921,12 @@ export default function CasesPage() {
                                 <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
+                            )}
                           </>
                         ) : (
                           /* Active cases: Archive or Delete */
                           <>
+                            {can.canUpdateCase() && (
                             <IconButton
                               title="أرشفة"
                               variant="orange"
@@ -931,7 +941,8 @@ export default function CasesPage() {
                                 <Archive size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
-
+                            )}
+                            {can.canDeleteCase() && (
                             <IconButton
                               title="حذف"
                               variant="red"
@@ -946,6 +957,7 @@ export default function CasesPage() {
                                 <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
+                            )}
                           </>
                         )}
                       </div>

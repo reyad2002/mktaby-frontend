@@ -44,6 +44,7 @@ import {
 } from "@/features/folder/hooks/folderHooks";
 import { useRouter } from "next/navigation";
 import UploadFiles from "@/features/fileAtt/components/uploadFiles";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 // ===== helpers =====
 const formatDateAr = (date?: string | null) =>
   date ? new Date(date).toLocaleDateString("ar-EG") : "—";
@@ -177,7 +178,7 @@ function UploadFileForm({
   const [entityId, setEntityId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadFileMutation = useUploadFile();
-
+  const { can } = usePermissions();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -647,6 +648,7 @@ export default function Page() {
     setPageNumber(next);
   };
   const [uploadOpen, setUploadOpen] = useState(false);
+  const { can } = usePermissions();
   return (
     <section className="space-y-6 relative">
       {/* Soft premium background */}
@@ -664,18 +666,26 @@ export default function Page() {
         countLabel={`${totalCount} عنصر`}
         onRefresh={() => refetch()}
         customActions={[
-          {
-            label: "إضافة ملف",
-            onClick: () => setShowAddFileModal(true),
-            icon: UploadCloud,
-            variant: "primary",
-          },
-          {
-            label: "إضافة مجلد",
-            onClick: () => setShowAddFolderModal(true),
-            icon: FolderPlus,
-            variant: "primary",
-          },
+          ...(can.canCreateDocument()
+            ? [
+                {
+                  label: "إضافة ملف",
+                  onClick: () => setShowAddFileModal(true),
+                  icon: UploadCloud,
+                  variant: "primary" as const,
+                },
+              ]
+            : []),
+          ...(can.canCreateDocument()
+            ? [
+                {
+                  label: "إضافة مجلد",
+                  onClick: () => setShowAddFolderModal(true),
+                  icon: FolderPlus,
+                  variant: "primary" as const,
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -849,7 +859,8 @@ export default function Page() {
                                   <Download size={16} />
                                 )}
                               </button>
-                              <button
+                              { can.canDeleteDocument() && (
+                                <button
                                 type="button"
                                 title="حذف مؤقت"
                                 disabled={softDeleteFile.isPending}
@@ -872,6 +883,8 @@ export default function Page() {
                                   <Trash2 size={16} />
                                 )}
                               </button>
+                              )}
+                              { can.canUpdateDocument() && (
                               <button
                                 type="button"
                                 title="تعديل"
@@ -888,6 +901,7 @@ export default function Page() {
                                   <Edit2 size={16} />
                                 )}
                               </button>
+                              )}
                             </>
                           ) : (
                             <div className="text-sm text-gray-400 italic gap-2 flex items-center">
@@ -926,7 +940,8 @@ export default function Page() {
                                     />
                                   </div>
                                 </button>
-                                <button
+                                { can.canDeleteDocument() && (
+                                  <button
                                   type="button"
                                   title="حذف مؤقت"
                                   disabled={softDeleteFolder.isPending}
@@ -952,6 +967,7 @@ export default function Page() {
                                     <Trash2 size={16} />
                                   )}
                                 </button>
+                                )}
                               </>
                             </div>
                           )}

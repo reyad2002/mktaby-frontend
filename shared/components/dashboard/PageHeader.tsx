@@ -22,7 +22,7 @@ interface PageHeaderProps {
   onRefresh?: () => void;
   onAdd?: () => void;
   addButtonLabel?: string;
-  customActions?: PageHeaderAction[];
+  customActions?: PageHeaderAction[] ;
   children?: React.ReactNode;
   /** Show back button */
   showBackButton?: boolean;

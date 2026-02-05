@@ -4,7 +4,7 @@ import { Scale } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "تسجيل الدخول",
-  description: "تسجيل الدخول إلى نظام مكتبي لإدارة المكاتب القانونية",
+  description: "تسجيل الدخول إلى نظام محاماة لإدارة المكاتب القانونية",
 };
 
 export default function LoginPage() {
@@ -19,7 +19,7 @@ export default function LoginPage() {
               <Scale className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              نظام مكتبي
+              نظام محاماة
             </h1>
             <p className="text-gray-600">
               مرحباً بك، يرجى تسجيل الدخول للمتابعة
@@ -44,7 +44,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-600 mt-6">
-          © 2025 نظام مكتبي. جميع الحقوق محفوظة.
+          © 2025 نظام محاماة. جميع الحقوق محفوظة.
         </p>
       </div>
     </div>

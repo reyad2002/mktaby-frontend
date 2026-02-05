@@ -19,32 +19,32 @@ import {
 
 // Fetch paginated permissions list
 export async function fetchPermissions(
-  params: PermissionsQueryParams = {}
+  params: PermissionsQueryParams = {},
 ): Promise<PermissionsResponse> {
   const response = await apiClient.get<PermissionsResponse>(
     PERMISSIONS_LIST_PATH,
-    { params }
+    { params },
   );
   return response.data;
 }
 
 // Add new permission
 export async function addPermission(
-  permissionData: AddPermissionRequest
+  permissionData: AddPermissionRequest,
 ): Promise<AddPermissionResponse> {
   const response = await apiClient.post<AddPermissionResponse>(
     ADD_PERMISSION_PATH,
-    permissionData
+    permissionData,
   );
   return response.data;
 }
 
 // Get permission by ID
 export async function getPermissionById(
-  id: number
+  id: number,
 ): Promise<GetPermissionResponse> {
   const response = await apiClient.get<GetPermissionResponse>(
-    `${GET_PERMISSION_PATH}/${id}`
+    `${GET_PERMISSION_PATH}/${id}`,
   );
 
   return response.data;
@@ -53,21 +53,21 @@ export async function getPermissionById(
 // Update permission by ID
 export async function updatePermission(
   id: number,
-  permissionData: UpdatePermissionRequest
+  permissionData: UpdatePermissionRequest,
 ): Promise<UpdatePermissionResponse> {
   const response = await apiClient.put<UpdatePermissionResponse>(
     `${UPDATE_PERMISSION_PATH}/${id}`,
-    permissionData
+    permissionData,
   );
   return response.data;
 }
 
 // Delete permission by ID
 export async function deletePermission(
-  id: number
+  id: number,
 ): Promise<DeletePermissionResponse> {
   const response = await apiClient.delete<DeletePermissionResponse>(
-    `${DELETE_PERMISSION_PATH}/${id}`
+    `${DELETE_PERMISSION_PATH}/${id}`,
   );
   return response.data;
 }

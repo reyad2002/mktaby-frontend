@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 import type { LucideIcon } from "lucide-react";
 import {
   Folder,
@@ -605,7 +606,7 @@ export default function FileManager({
   const items: FileItem[] = resourcesData?.data?.data ?? [];
   const totalCount: number = resourcesData?.data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
+  const { can } = usePermissions();
   const handlePageChange = (next: number) => {
     if (next < 1 || next > totalPages) return;
     setPageNumber(next);
@@ -620,14 +621,16 @@ export default function FileManager({
           <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <button
+          {can.canCreateDocument() && (
+            <button
             onClick={() => setShowAddFileModal(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition"
           >
             <UploadCloud size={16} />
             إضافة ملف
           </button>
-          {showCreateFolder && (
+          )}
+          {can.canCreateDocument() && (
             <button
               onClick={() => setShowAddFolderModal(true)}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition"
@@ -794,6 +797,7 @@ export default function FileManager({
                                   <Download size={16} />
                                 )}
                               </button>
+                            { can.canUpdateDocument() && (
                               <button
                                 type="button"
                                 title="تعديل"
@@ -810,6 +814,8 @@ export default function FileManager({
                                   <Edit2 size={16} />
                                 )}
                               </button>
+                            )}
+                            { can.canDeleteDocument() && (
                               <button
                                 type="button"
                                 title="حذف مؤقت"
@@ -833,6 +839,7 @@ export default function FileManager({
                                   <Trash2 size={16} />
                                 )}
                               </button>
+                            )}
                             </>
                           ) : (
                             <>
@@ -850,6 +857,7 @@ export default function FileManager({
                                   className="text-blue-700"
                                 />
                               </button>
+                            { can.canDeleteDocument() && (
                               <button
                                 type="button"
                                 title="حذف مؤقت"
@@ -873,6 +881,7 @@ export default function FileManager({
                                   <Trash2 size={16} />
                                 )}
                               </button>
+                            )}
                             </>
                           )}
                         </div>

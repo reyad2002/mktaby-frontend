@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Header from "./Header";
 import SideNav from "./SideNav";
 import AuthGuard from "../auth/AuthGuard";
+import PermissionGuard from "../auth/PermissionGuard";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -35,10 +36,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {/* Header */}
           <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-          {/* Page Content */}
+          {/* Page Content - PermissionGuard shows page or "Not Authorized" */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden ">
             <div className="p-4 sm:p-6 lg:p-8 ">
-              <div className=" ">{children}</div>
+              <PermissionGuard>{children}</PermissionGuard>
             </div>
           </main>
         </div>

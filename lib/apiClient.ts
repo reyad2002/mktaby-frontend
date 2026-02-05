@@ -27,11 +27,19 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Refresh on 401 and retry once
+// 403 = Forbidden (no permission) - NEVER clear tokens, user is authenticated
+// 401 = Unauthorized - try refresh, only clear tokens if refresh fails
 apiClient.interceptors.response.use(
   (res) => res,
   async (error) => {
     const originalRequest = error.config;
+
+    // 403 Forbidden = user is authenticated but lacks permission - do NOT clear tokens
+    if (error.response?.status === 403) {
+      // console.log(error.response?.data, "error.response?.data");
+      return Promise.reject(error);
+
+    }
 
     // Skip refresh for auth endpoints to avoid circular dependency
     const isAuthEndpoint = originalRequest?.url?.includes("/Auth/");
@@ -41,6 +49,17 @@ apiClient.interceptors.response.use(
       !originalRequest._retry &&
       !isAuthEndpoint
     ) {
+      // Check if error indicates permission denied (backend sometimes returns 401 for forbidden)
+      const msg = String(error.response?.data?.message ?? "").toLowerCase();
+      const isPermissionError =
+        msg.includes("permission") ||
+        msg.includes("forbidden") ||
+        msg.includes("صلاحية") ||
+        msg.includes("غير مصرح");
+      if (isPermissionError) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {

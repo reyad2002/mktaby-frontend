@@ -9,22 +9,33 @@ import {
   addPermissionSchema,
   type AddPermissionFormData,
 } from "../validations/addPermissionValidation";
+import BitwisePermissionField from "./BitwisePermissionField";
+import DmlPermissionField from "./DmlPermissionField";
+import { VIEW_LEVEL_OPTIONS } from "../constants/permissionFlags";
 
 interface AddPermissionFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-// Permission field configuration for the form
-const PERMISSION_FIELDS = [
-  { name: "documentPermissions", label: "صلاحيات المستندات" },
-  { name: "clientPermissions", label: "صلاحيات العملاء" },
-  { name: "sessionPermission", label: "صلاحيات الجلسات" },
-  { name: "financePermission", label: "صلاحيات المالية" },
-  { name: "viewCasePermissions", label: "عرض القضايا" },
-  { name: "dmlCasePermissions", label: "إدارة القضايا" },
-  { name: "viewTaskPermissions", label: "عرض المهام" },
-  { name: "dmlTaskPermissions", label: "إدارة المهام" },
+// Bitwise fields: 1=create, 2=update, 4=delete, 8=view
+const BITWISE_FIELDS = [
+  { name: "documentPermissions" as const, label: "صلاحيات المستندات" },
+  { name: "clientPermissions" as const, label: "صلاحيات العملاء" },
+  { name: "sessionPermission" as const, label: "صلاحيات الجلسات" },
+  // { name: "financePermission" as const, label: "صلاحيات المالية" },
+] as const;
+
+// View: 0=no access, 1=metadata, 2=assigned, 3=all
+const VIEW_FIELDS = [
+  { name: "viewCasePermissions" as const, label: "عرض القضايا" },
+  { name: "viewTaskPermissions" as const, label: "عرض المهام" },
+] as const;
+
+// DML: create, update, delete (bitwise)
+const DML_FIELDS = [
+  { name: "dmlCasePermissions" as const, label: "إدارة القضايا" },
+  { name: "dmlTaskPermissions" as const, label: "إدارة المهام" },
 ] as const;
 
 export default function AddPermissionForm({
@@ -36,6 +47,7 @@ export default function AddPermissionForm({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -92,35 +104,85 @@ export default function AddPermissionForm({
         )}
       </div>
 
-      {/* Permission Levels Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {PERMISSION_FIELDS.map((field) => (
-          <div key={field.name}>
-            <label
-              htmlFor={field.name}
-              className="block text-sm font-medium text-gray-700 mb-1"
+      {/* Bitwise Permissions (Document, Client, Session, Finance) */}
+      <div className="space-y-4">
+        <p className="text-xs text-gray-500">
+          عرض=1، إنشاء=2، تحديث=4، حذف=8 — يمكن الجمع بينها
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {BITWISE_FIELDS.map((field) => (
+            <div
+              key={field.name}
+              className="rounded-xl border border-gray-200 bg-gray-50/50 p-4"
             >
-              {field.label}
-            </label>
-            <select
-              id={field.name}
-              {...register(field.name, { valueAsNumber: true })}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                errors[field.name] ? "border-red-500" : "border-gray-300"
-              }`}
+              <BitwisePermissionField
+                name={field.name}
+                control={control}
+                label={field.label}
+                error={errors[field.name]?.message}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* View Permissions (Cases, Tasks): 0=no access, 1=metadata, 2=assigned, 3=all */}
+      <div className="space-y-4">
+        <p className="text-xs text-gray-500">
+          عرض: 0=بدون وصول، 1=البيانات الوصفية، 2=المعين له، 3=الكل
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {VIEW_FIELDS.map((field) => (
+            <div key={field.name}>
+              <label
+                htmlFor={field.name}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                {field.label}
+              </label>
+              <select
+                id={field.name}
+                {...register(field.name, { valueAsNumber: true })}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                  errors[field.name] ? "border-red-500" : "border-gray-300"
+                }`}
+              >
+                {VIEW_LEVEL_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors[field.name] && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors[field.name]?.message}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* DML Permissions (Cases, Tasks): create, update, delete */}
+      <div className="space-y-4">
+        <p className="text-xs text-gray-500">
+          إدارة: إنشاء، تحديث، حذف — يمكن الجمع بينها
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {DML_FIELDS.map((field) => (
+            <div
+              key={field.name}
+              className="rounded-xl border border-gray-200 bg-gray-50/50 p-4"
             >
-              <option value={0}>لا يوجد</option>
-              <option value={1}>قراءة فقط</option>
-              <option value={2}>قراءة وكتابة</option>
-              <option value={3}>كامل الصلاحيات</option>
-            </select>
-            {errors[field.name] && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors[field.name]?.message}
-              </p>
-            )}
-          </div>
-        ))}
+              <DmlPermissionField
+                name={field.name}
+                control={control}
+                label={field.label}
+                error={errors[field.name]?.message}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Buttons */}

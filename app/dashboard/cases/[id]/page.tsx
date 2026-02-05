@@ -17,7 +17,7 @@ import CaseDocuments from "@/features/cases/components/CaseDocuments";
 import CaseTasks from "@/features/cases/components/CaseTasks";
 import CasePayments from "@/features/cases/components/CasePayments";
 import CaseManagement from "@/features/cases/components/CaseManagement";
-
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 type TabKey =
   | "overview"
   | "sessions"
@@ -41,6 +41,7 @@ export default function CaseDetailsPage() {
   // State for active tab
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
+  const { can } = usePermissions();
   const caseNav: NavItem[] = [
     {
       key: "overview",
@@ -48,36 +49,43 @@ export default function CaseDetailsPage() {
       trans: "نظرة عامة",
       icon: LayoutDashboard,
     },
-    {
-      key: "sessions",
-      name: "sessions",
-      trans: "الجلسات",
-      icon: Gavel,
-    },
-    {
-      key: "documents",
-      name: "Documents",
-      trans: "المستندات",
-      icon: FileText,
-    },
-    {
-      key: "tasks",
-      name: "tasks",
-      trans: "المهام",
-      icon: ClipboardList,
-    },
-    {
-      key: "payments",
-      name: "payments",
-      trans: "المدفوعات",
-      icon: Wallet,
-    },
-    // {
-    //   key: "management",
-    //   name: "management tasks",
-    //   trans: "مهام الإدارة",
-    //   icon: ShieldCheck,
-    // },
+    ...(can.canViewSessions()
+      ? [
+            {
+            key: "sessions" as const,
+            name: "sessions",
+            trans: "الجلسات",
+            icon: Gavel,
+          },
+        ] : []),
+    ...(can.canViewDocuments()
+      ? [
+          {
+            key: "documents" as const,
+            name: "Documents",
+            trans: "المستندات",
+            icon: FileText,
+          },
+        ]
+      : []),
+    ...(can.canViewTasks()
+      ? [
+          {
+            key: "tasks" as const,
+            name: "tasks",
+            trans: "المهام",
+            icon: ClipboardList,
+          },
+        ] : []),
+    ...(can.canViewFinance()
+      ? [
+          {
+            key: "payments" as const,
+            name: "payments",
+            trans: "المدفوعات",
+            icon: Wallet,
+          },
+        ] : []),
   ];
 
   const handleBack = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -29,10 +29,7 @@ import {
   getCurrentUser,
   setProfileImage,
 } from "@/features/users/apis/usersApi";
-import { getPermissionById } from "@/features/permissions/apis/permissionsApi";
-import { setPermissions } from "@/features/permissions/permissionsSlice";
 import EditProfileForm from "@/features/userprofile/components/EditProfileForm";
-import { useDispatch } from "react-redux";
 
 type TabKey = "overview" | "system";
 
@@ -81,7 +78,6 @@ function safeText(v?: string | null) {
 }
 
 export default function UserProfilePage() {
-  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [tab, setTab] = useState<TabKey>("overview");
 
@@ -94,16 +90,6 @@ export default function UserProfilePage() {
   });
 
   const user = data?.data;
-
-  const { data: permissionData } = useQuery({
-    queryKey: ["permission", user?.userPermissionId],
-    queryFn: () => getPermissionById(user!.userPermissionId),
-    enabled: !!user?.userPermissionId,
-  });
-
-  useEffect(() => {
-    if (permissionData) dispatch(setPermissions(permissionData));
-  }, [permissionData, dispatch]);
 
   const createdAtText = useMemo(
     () => formatDateLong(user?.createdAt),

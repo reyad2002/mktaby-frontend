@@ -66,7 +66,7 @@ const SORT_OPTIONS = [
 const EXPENSE_TYPE_OPTIONS: { value: OfficeExpenseType; label: string }[] = [
   { value: "Rent", label: "إيجار" },
   { value: "Utilities", label: "مرافق" },
-  { value: "OfficeSupplies", label: "مستلزمات مكتبية" },
+  { value: "OfficeSupplies", label: "مستلزمات محاماة" },
   { value: "Maintenance", label: "صيانة" },
   { value: "Marketing", label: "تسويق" },
   { value: "Travel", label: "سفر" },

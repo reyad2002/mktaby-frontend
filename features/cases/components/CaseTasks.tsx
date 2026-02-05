@@ -28,6 +28,7 @@ import type {
   TaskPriority,
   TaskStatus,
 } from "@/features/tasks/types/taskTypes";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 
 /* ========== Styles ========== */
 const ui = {
@@ -96,6 +97,7 @@ const EMPTY_TASK_FORM = {
 
 /* ========== Main Component ========== */
 export default function CaseTasks({ caseId }: CaseTasksProps) {
+  const { can } = usePermissions();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskDto | null>(null);
@@ -211,6 +213,7 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
               <span className="text-sm text-slate-500">({tasks.length})</span>
             )}
           </div>
+          {can.canCreateTask() && (
           <button
             onClick={handleOpenAddModal}
             className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition"
@@ -218,6 +221,7 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
             <Plus size={16} />
             إضافة مهمة
           </button>
+          )}
         </div>
 
         <div className={ui.cardBody}>
@@ -237,6 +241,7 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
                 لم يتم إضافة أي مهام لهذه القضية بعد. ابدأ بإضافة المهام
                 المطلوبة.
               </p>
+              {can.canCreateTask() && (
               <button
                 onClick={handleOpenAddModal}
                 className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white hover:bg-teal-700 transition"
@@ -244,6 +249,7 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
                 <Plus size={18} />
                 إضافة أول مهمة
               </button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -286,6 +292,7 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {can.canUpdateTask() && (
                       <button
                         onClick={() => handleOpenEditModal(task)}
                         className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
@@ -293,6 +300,8 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
                       >
                         <Edit size={16} />
                       </button>
+                      )}
+                      {can.canDeleteTask() && (
                       <button
                         onClick={() => handleDeleteTask(task.id)}
                         disabled={deletingTaskId === task.id}
@@ -305,6 +314,7 @@ export default function CaseTasks({ caseId }: CaseTasksProps) {
                           <Trash2 size={16} />
                         )}
                       </button>
+                      )}
                     </div>
                   </div>
                 </div>

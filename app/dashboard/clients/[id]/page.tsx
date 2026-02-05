@@ -73,7 +73,7 @@ export default function ClientDetailsPage() {
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
   const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(
-    null
+    null,
   );
 
   const [employeeForm, setEmployeeForm] =
@@ -81,7 +81,7 @@ export default function ClientDetailsPage() {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingEmployeeId, setDeletingEmployeeId] = useState<number | null>(
-    null
+    null,
   );
 
   const {
@@ -106,7 +106,7 @@ export default function ClientDetailsPage() {
       IsDeleted: false,
       IsArchived: false,
     }),
-    [clientId]
+    [clientId],
   );
 
   const { data: casesResponse, isLoading: casesLoading } =
@@ -246,7 +246,7 @@ export default function ClientDetailsPage() {
   const handleSoftDelete = () => {
     if (
       window.confirm(
-        `هل تريد أرشفة العميل "${client?.name}"؟\nيمكن استعادته لاحقاً.`
+        `هل تريد أرشفة العميل "${client?.name}"؟\nيمكن استعادته لاحقاً.`,
       )
     ) {
       softDeleteMutation.mutate(clientId);
@@ -256,7 +256,7 @@ export default function ClientDetailsPage() {
   const handleHardDelete = () => {
     if (
       window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف العميل "${client?.name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`
+        `⚠️ تحذير: هل أنت متأكد من حذف العميل "${client?.name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
       )
     ) {
       hardDeleteMutation.mutate(clientId);
@@ -735,7 +735,7 @@ export default function ClientDetailsPage() {
                         <span className="text-xs font-bold text-gray-700">
                           {Math.round(
                             (financeItem.paid / Math.max(1, financeItem.fees)) *
-                              100
+                              100,
                           )}
                           %
                         </span>
@@ -748,7 +748,7 @@ export default function ClientDetailsPage() {
                               100,
                               (financeItem.paid /
                                 Math.max(1, financeItem.fees)) *
-                                100
+                                100,
                             )}%`,
                           }}
                         />

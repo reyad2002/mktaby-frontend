@@ -52,7 +52,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     queryKey: ["permission", userData?.data?.userPermissionId],
     queryFn: () => getPermissionById(userData!.data!.userPermissionId),
     enabled: !!userData?.data?.userPermissionId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   // Store user profile in Redux
@@ -70,7 +70,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }, [permissionData, dispatch]);
 
   // Show loading while checking auth or fetching data
- if (authStatus === "checking" || userLoading || permLoading) {
+  if (authStatus === "checking" || userLoading || permLoading) {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-sm p-6 text-center">

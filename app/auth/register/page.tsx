@@ -4,7 +4,7 @@ import { Scale } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "إنشاء حساب جديد",
-  description: "إنشاء حساب جديد في نظام مكتبي لإدارة المكاتب القانونية",
+  description: "إنشاء حساب جديد في نظام محاماة لإدارة المكاتب القانونية",
 };
 
 export default function RegisterPage() {
@@ -19,7 +19,7 @@ export default function RegisterPage() {
               <Scale className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              نظام مكتبي
+              نظام محاماة
             </h1>
             <p className="text-gray-600">أنشئ حسابك للبدء في استخدام النظام</p>
           </div>
@@ -43,7 +43,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-600 mt-6">
-          © 2025 نظام مكتبي. جميع الحقوق محفوظة.
+          © 2025 نظام محاماة. جميع الحقوق محفوظة.
         </p>
       </div>
     </div>

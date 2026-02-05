@@ -24,27 +24,19 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import { selectUserPermissions } from "@/features/permissions/permissionsSlice";
 import { selectUserProfile } from "@/features/userprofile/userProfileSlice";
-import { PermissionDetail } from "@/features/permissions/types/permissionTypes";
-
-// Permission keys that map to PermissionDetail fields
-type PermissionKey =
-  | "viewCasePermissions"
-  | "clientPermissions"
-  | "documentPermissions"
-  | "sessionPermission"
-  | "viewTaskPermissions"
-  | "financePermission";
+import { selectUserPermissions } from "@/features/permissions/permissionsSlice";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
   submenu?: NavItem[];
-  permissionKey?: PermissionKey;
   adminOnly?: boolean;
   badge?: string | number;
+  /** Function that returns true if user can see this item */
+  canAccess?: () => boolean;
 }
 
 interface SideNavProps {
@@ -52,19 +44,12 @@ interface SideNavProps {
   onClose?: () => void;
 }
 
-// Helper function to check if user has permission
-const hasPermission = (
-  permissions: PermissionDetail,
-  key: PermissionKey
-): boolean => {
-  return permissions[key] > 0;
-};
-
 const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const userPermissions = useSelector(selectUserPermissions);
   const userProfile = useSelector(selectUserProfile);
+  const { can } = usePermissions();
+  const permissions = useSelector(selectUserPermissions);
   const isOfficeAdmin = userProfile.role === "OfficeAdmin";
 
   const allNavItems: NavItem[] = [
@@ -77,54 +62,55 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       label: "إدارة القضايا",
       href: "/dashboard/cases",
       icon: <Gavel size={20} />,
-      permissionKey: "viewCasePermissions",
+      canAccess: can.canViewCases,
     },
     {
       label: "إدارة الموكلين",
       href: "/dashboard/clients",
       icon: <Users size={20} />,
-      permissionKey: "clientPermissions",
+      canAccess: can.canViewClients,
     },
-    {
-      label: "المحاكم",
-      href: "/dashboard/courts",
-      icon: <Building2 size={20} />,
-      permissionKey: "documentPermissions",
-    },
+    // {
+    //   label: "المحاكم",
+    //   href: "/dashboard/courts",
+    //   icon: <Building2 size={20} />,
+    //   canAccess: can.canViewDocuments,
+    // },
     {
       label: "إدارة الجلسات",
       href: "/dashboard/sessions",
       icon: <Clock size={20} />,
-      permissionKey: "sessionPermission",
+      canAccess: can.canViewSessions,
     },
     {
       label: "المهام",
       href: "/dashboard/tasks",
       icon: <CheckSquare size={20} />,
-      permissionKey: "viewTaskPermissions",
+      canAccess: can.canViewTasks,
     },
     {
       label: "التقويم",
       href: "/dashboard/calendar",
       icon: <CalendarDays size={20} />,
+      canAccess: can.canViewSessions, // calendar tied to sessions
     },
     {
       label: "إدارة الملفات",
       href: "/dashboard/files",
       icon: <FolderOpen size={20} />,
-      permissionKey: "documentPermissions",
+      canAccess: can.canViewDocuments,
     },
     {
       label: "إدارة الماليات",
       href: "/dashboard/accounting",
       icon: <Wallet size={20} />,
-      permissionKey: "financePermission",
+      canAccess: can.canViewFinance,
     },
-    {
-      label: "إدارة الإشعارات",
-      href: "/dashboard/notifications",
-      icon: <Bell size={20} />,
-    },
+    // {
+    //   label: "إدارة الإشعارات",
+    //   href: "/dashboard/notifications",
+    //   icon: <Bell size={20} />,
+    // },
     {
       label: "الإعدادات",
       href: "#",
@@ -132,14 +118,14 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       adminOnly: true,
       submenu: [
         {
+          label: "الملف الشخصي",
+          href: "/dashboard/settings/userprofile",
+          icon: <User size={18} />,
+        },
+        {
           label: "المكتب",
           href: "/dashboard/settings/office",
           icon: <Building size={18} />,
-        },
-        {
-          label: "المستخدمون",
-          href: "/dashboard/settings/users",
-          icon: <UserCog size={18} />,
         },
         {
           label: "الصلاحيات",
@@ -147,40 +133,34 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
           icon: <Shield size={18} />,
         },
         {
-          label: "الملف الشخصي",
-          href: "/dashboard/settings/userprofile",
-          icon: <User size={18} />,
+          label: "المستخدمون",
+          href: "/dashboard/settings/users",
+          icon: <UserCog size={18} />,
         },
+        {
+          label : "المحاكم",
+          href: "/dashboard/settings/courts",
+          icon: <Building2 size={18} />,
+          // canAccess: can.canViewCourts,
+        }
       ],
     },
   ];
 
   // Filter nav items based on user role and permissions
   const navItems = useMemo(() => {
-    if (isOfficeAdmin) {
-      return allNavItems;
-    }
-
     return allNavItems.filter((item) => {
-      if (item.adminOnly) {
-        return false;
-      }
-      if (
-        item.permissionKey &&
-        !hasPermission(userPermissions, item.permissionKey)
-      ) {
-        return false;
-      }
+      if (item.adminOnly && !isOfficeAdmin) return false;
+      if (item.canAccess && !item.canAccess()) return false;
       return true;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userPermissions, isOfficeAdmin]);
+  }, [isOfficeAdmin, permissions]);
 
   const toggleSubmenu = useCallback((label: string) => {
     setExpandedItems((prev) =>
       prev.includes(label)
         ? prev.filter((item) => item !== label)
-        : [...prev, label]
+        : [...prev, label],
     );
   }, []);
 
@@ -189,7 +169,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
       if (href === "#") return false;
       return pathname === href || pathname.startsWith(href + "/");
     },
-    [pathname]
+    [pathname],
   );
 
   return (
@@ -218,7 +198,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
               <Scale className="text-white" size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold">مكتبي</h1>
+              <h1 className="text-xl font-bold">محاماة</h1>
               <p className="text-[10px] text-white/60 uppercase tracking-wider">
                 Management System
               </p>
@@ -300,7 +280,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
                                 <span
                                   className={
                                     isActiveRoute(subitem.href)
-                                      ? "text-[#6B1D2C]"
+                                      ? "text-[#17536e]"
                                       : ""
                                   }
                                 >
@@ -357,7 +337,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen = true, onClose }) => {
         {/* Footer */}
         <div className="p-4 border-t border-white/10">
           <div className="text-center text-white/50 text-xs">
-            <p>© 2025 مكتبي</p>
+            <p>© 2025 محاماة</p>
             <p className="mt-1">الإصدار 1.0.0</p>
           </div>
         </div>

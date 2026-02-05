@@ -35,6 +35,7 @@ import {
 import AddClientForm from "@/features/clients/components/AddClientForm";
 import EditClientForm from "@/features/clients/components/EditClientForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 
 import type {
   ClientsQueryParams,
@@ -101,7 +102,7 @@ export function CustomSelect({
 
   const selected = options.find((o) => String(o.value) === String(value));
   const shownLabel =
-    value === "" ? placeholder : selected?.label ?? placeholder;
+    value === "" ? placeholder : (selected?.label ?? placeholder);
 
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -345,6 +346,7 @@ function clientTypeBadge(value: string) {
 
 export default function ClientsPage() {
   const router = useRouter();
+  const { can } = usePermissions();
 
   const [filters, setFilters] = useState<ClientsQueryParams>(DEFAULT_FILTERS);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -381,7 +383,7 @@ export default function ClientsPage() {
 
   const updateFilter = <K extends keyof ClientsQueryParams>(
     key: K,
-    value: ClientsQueryParams[K]
+    value: ClientsQueryParams[K],
   ) => {
     setFilters((prev) => ({
       ...prev,
@@ -398,7 +400,9 @@ export default function ClientsPage() {
   };
 
   const handleSoftDelete = (id: number, name: string) => {
-    if (window.confirm(`هل تريد أرشفة العميل "${name}"؟\nيمكن استعادته لاحقاً.`)) {
+    if (
+      window.confirm(`هل تريد أرشفة العميل "${name}"؟\nيمكن استعادته لاحقاً.`)
+    ) {
       softDeleteMutation.mutate(id);
     }
   };
@@ -406,7 +410,7 @@ export default function ClientsPage() {
   const handleHardDelete = (id: number, name: string) => {
     if (
       window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف العميل "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`
+        `⚠️ تحذير: هل أنت متأكد من حذف العميل "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
       )
     ) {
       hardDeleteMutation.mutate(id);
@@ -434,9 +438,9 @@ export default function ClientsPage() {
         icon={Users}
         isFetching={isFetching}
         countLabel={`${totalCount} عميل`}
-        onAdd={() => setShowAddClientModal(true)}
+        onAdd={can.canCreateClient() ? () => setShowAddClientModal(true) : undefined}
         addButtonLabel="إضافة عميل"
-        finance={() => router.push("/dashboard/clients-finance")}
+        finance={can.canViewFinance() ? () => router.push("/dashboard/clients-finance") : undefined}
         financeLabel="المحاسبة المالية للعملاء"
       />
 
@@ -545,7 +549,7 @@ export default function ClientsPage() {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             select.key as any,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            val === "" ? (undefined as any) : (val as any)
+                            val === "" ? (undefined as any) : (val as any),
                           )
                         }
                       />
@@ -610,8 +614,7 @@ export default function ClientsPage() {
                 color: "bg-red-500",
               },
             ].map((opt) => {
-              const isActive =
-                opt.key === "active" && !filters.isDeleted;
+              const isActive = opt.key === "active" && !filters.isDeleted;
               const isDeleted = opt.key === "deleted" && !!filters.isDeleted;
               const active = isActive || isDeleted;
               const Icon = opt.icon;
@@ -751,13 +754,22 @@ export default function ClientsPage() {
                     </td>
 
                     {/* Phone */}
-                    <td className="px-6 py-5 text-sm font-medium text-gray-600 whitespace-nowrap" dir="ltr">
+                    <td
+                      className="px-6 py-5 text-sm font-medium text-gray-600 whitespace-nowrap"
+                      dir="ltr"
+                    >
                       {client.phoneCode} {client.phoneNumber}
                     </td>
 
                     {/* Email */}
-                    <td className="px-6 py-5 text-sm font-medium text-gray-600 max-w-[280px]" dir="ltr">
-                      <span className="truncate block" title={client.email || ""}>
+                    <td
+                      className="px-6 py-5 text-sm font-medium text-gray-600 max-w-[280px]"
+                      dir="ltr"
+                    >
+                      <span
+                        className="truncate block"
+                        title={client.email || ""}
+                      >
                         {client.email || "—"}
                       </span>
                     </td>
@@ -779,6 +791,7 @@ export default function ClientsPage() {
                           <Eye size={16} strokeWidth={2.5} />
                         </IconButton>
 
+                        {can.canUpdateClient() && (
                         <IconButton
                           title="تعديل"
                           onClick={() => {
@@ -788,14 +801,18 @@ export default function ClientsPage() {
                         >
                           <Edit size={16} strokeWidth={2.5} />
                         </IconButton>
+                        )}
 
                         {filters.isDeleted ? (
                           <>
+                            {can.canUpdateClient() && (
                             <IconButton
                               title="استعادة"
                               variant="green"
                               disabled={restoreMutation.isPending}
-                              onClick={() => handleRestore(client.id, client.name)}
+                              onClick={() =>
+                                handleRestore(client.id, client.name)
+                              }
                             >
                               {restoreMutation.isPending ? (
                                 <Loader2 size={16} className="animate-spin" />
@@ -803,7 +820,8 @@ export default function ClientsPage() {
                                 <RotateCcw size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
-
+                            )}
+                            {can.canDeleteClient() && (
                             <IconButton
                               title="حذف نهائي"
                               variant="red"
@@ -818,9 +836,11 @@ export default function ClientsPage() {
                                 <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
+                            )}
                           </>
                         ) : (
                           <>
+                            {can.canDeleteClient() && (
                             <IconButton
                               title="حذف"
                               variant="red"
@@ -835,7 +855,7 @@ export default function ClientsPage() {
                                 <Trash2 size={16} strokeWidth={2.5} />
                               )}
                             </IconButton>
-
+                            )}
                             {/* <IconButton
                               title="حذف نهائي"
                               variant="red"
@@ -876,7 +896,8 @@ export default function ClientsPage() {
             </div>
             <span className="hidden sm:block h-4 w-px bg-gray-200" />
             <div className="text-sm font-medium text-gray-500">
-              عرض <span className="text-primary font-bold">{clients.length}</span>{" "}
+              عرض{" "}
+              <span className="text-primary font-bold">{clients.length}</span>{" "}
               من أصل{" "}
               <span className="font-bold text-gray-900">{totalCount}</span> سجل
             </div>

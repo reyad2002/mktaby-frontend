@@ -58,7 +58,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h1 className="text-2xl font-semibold text-gray-900">
-          مرحباً بك في مكتبي
+          مرحباً بك في محاماة
         </h1>
         <p className="text-sm text-gray-600 mt-1">
           نظرة عامة على إحصائيات المكتب والأنشطة الحالية

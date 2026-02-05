@@ -24,6 +24,11 @@ import type {
   PermissionsQueryParams,
   PermissionSummary,
 } from "@/features/permissions/types/permissionTypes";
+import {
+  getBitwiseLabel,
+  getViewLevelLabel,
+  getDmlLabel,
+} from "@/features/permissions/constants/permissionFlags";
 
 const DEFAULT_FILTERS: PermissionsQueryParams = {
   pageNumber: 1,
@@ -38,13 +43,6 @@ const SORT_OPTIONS = [
   { value: "createdAt desc", label: "الأحدث أولاً" },
   { value: "createdAt asc", label: "الأقدم أولاً" },
 ];
-
-const levelPill = (v: number) => {
-  if (v === 0) return "bg-gray-50 text-gray-700 border-gray-200";
-  if (v === 1) return "bg-blue-50 text-blue-700 border-blue-200";
-  if (v === 2) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  return "bg-purple-50 text-purple-700 border-purple-200";
-};
 
 function LoadingState() {
   return (
@@ -143,21 +141,6 @@ export default function PermissionsPage() {
   const closeViewModal = () => {
     setShowViewModal(false);
     setViewPermissionId(null);
-  };
-
-  const getPermissionLabel = (level: number) => {
-    switch (level) {
-      case 0:
-        return "لا يوجد";
-      case 1:
-        return "قراءة فقط";
-      case 2:
-        return "قراءة وكتابة";
-      case 3:
-        return "كامل الصلاحيات";
-      default:
-        return "غير محدد";
-    }
   };
 
   return (
@@ -523,34 +506,50 @@ export default function PermissionsPage() {
                     {
                       label: "صلاحيات المستندات",
                       value: permissionDetails.documentPermissions,
+                      getLabel: getBitwiseLabel,
+                      pillClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
                     },
                     {
                       label: "صلاحيات العملاء",
                       value: permissionDetails.clientPermissions,
+                      getLabel: getBitwiseLabel,
+                      pillClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
                     },
                     {
                       label: "صلاحيات الجلسات",
                       value: permissionDetails.sessionPermission,
+                      getLabel: getBitwiseLabel,
+                      pillClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
                     },
                     {
                       label: "صلاحيات المالية",
                       value: permissionDetails.financePermission,
+                      getLabel: getBitwiseLabel,
+                      pillClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
                     },
                     {
                       label: "عرض القضايا",
                       value: permissionDetails.viewCasePermissions,
+                      getLabel: getViewLevelLabel,
+                      pillClass: "bg-amber-50 text-amber-700 border-amber-200",
                     },
                     {
                       label: "إدارة القضايا",
                       value: permissionDetails.dmlCasePermissions,
+                      getLabel: getDmlLabel,
+                      pillClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
                     },
                     {
                       label: "عرض المهام",
                       value: permissionDetails.viewTaskPermissions,
+                      getLabel: getViewLevelLabel,
+                      pillClass: "bg-amber-50 text-amber-700 border-amber-200",
                     },
                     {
                       label: "إدارة المهام",
                       value: permissionDetails.dmlTaskPermissions,
+                      getLabel: getDmlLabel,
+                      pillClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
                     },
                   ].map((item) => (
                     <div
@@ -561,11 +560,9 @@ export default function PermissionsPage() {
                         {item.label}
                       </span>
                       <span
-                        className={`text-xs font-medium px-2 py-1 rounded-full border ${levelPill(
-                          item.value
-                        )}`}
+                        className={`text-xs font-medium px-2 py-1 rounded-full border ${item.pillClass}`}
                       >
-                        {getPermissionLabel(item.value)}
+                        {item.getLabel(item.value)}
                       </span>
                     </div>
                   ))}

@@ -27,8 +27,8 @@ function LoginForm() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       // نقلت القيم هنا لضمان عمل الفورم بشكل صحيح
-      email: "Mo7amed6102003@gmail.com",
-      password: "12345678",
+      email: "",
+      password: "",
     },
   });
 

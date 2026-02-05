@@ -421,7 +421,7 @@ export default function CaseOverview({ caseId, onBack }: CaseOverviewProps) {
 
               <span
                 className={`${ui.badge} ${statusBadge(
-                  caseDetails.caseStatus.value
+                  caseDetails.caseStatus.value,
                 )}`}
               >
                 <Gavel size={12} />
@@ -616,7 +616,7 @@ export default function CaseOverview({ caseId, onBack }: CaseOverviewProps) {
                         <p className="text-xs text-slate-500">محامي</p>
                       </div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
             ) : (

@@ -36,6 +36,7 @@ import {
 import AddSessionForm from "@/features/sessions/components/AddSessionForm";
 import EditSessionForm from "@/features/sessions/components/EditSessionForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 import type {
   GetSessionsQuery,
   SessionListItem,
@@ -382,6 +383,7 @@ const formatSessionDate = (date: string) =>
   });
 
 export default function SessionsPage() {
+  const { can } = usePermissions();
   const [filters, setFilters] = useState<GetSessionsQuery>(DEFAULT_FILTERS);
   const [showAddSessionModal, setShowAddSessionModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -502,7 +504,7 @@ export default function SessionsPage() {
         icon={CalendarDays}
         isFetching={isFetching}
         countLabel={`${totalCount} جلسة`}
-        onAdd={() => setShowAddSessionModal(true)}
+        onAdd={can.canCreateSession() ? () => setShowAddSessionModal(true) : undefined}
         addButtonLabel="إضافة جلسة"
       />
 
@@ -865,6 +867,7 @@ export default function SessionsPage() {
                           <Eye size={16} strokeWidth={2.5} />
                         </IconButton>
 
+                        {can.canUpdateSession() && (
                         <IconButton
                           title="تعديل"
                           variant="primary"
@@ -875,7 +878,9 @@ export default function SessionsPage() {
                         >
                           <Edit size={16} strokeWidth={2.5} />
                         </IconButton>
+                        )}
 
+                        {can.canDeleteSession() && (
                         <IconButton
                           title="حذف"
                           variant="red"
@@ -888,6 +893,7 @@ export default function SessionsPage() {
                             <Trash2 size={16} strokeWidth={2.5} />
                           )}
                         </IconButton>
+                        )}
                       </div>
                     </td>
                   </tr>

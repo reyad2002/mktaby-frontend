@@ -4,7 +4,7 @@ import React from "react";
 
 export const metadata: Metadata = {
   title: "لوحة التحكم",
-  description: "لوحة تحكم نظام مكتبي لإدارة المكاتب القانونية",
+  description: "لوحة تحكم نظام محاماة لإدارة المكاتب القانونية",
 };
 
 const layout = ({ children }: { children: React.ReactNode }) => {

@@ -29,6 +29,7 @@ import { getCaseById } from "@/features/cases/apis/casesApis";
 import AddCaseSessionForm from "@/features/sessions/components/AddCaseSessionForm";
 import EditSessionForm from "@/features/sessions/components/EditSessionForm";
 import type { SessionListItem } from "@/features/sessions/types/sessionsTypes";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 
 /* ========== Styles ========== */
 const ui = {
@@ -171,7 +172,7 @@ function ErrorCard({ message }: { message?: string }) {
   );
 }
 
-function EmptyCard({ onAdd }: { onAdd: () => void }) {
+function EmptyCard({ onAdd }: { onAdd?: () => void }) {
   return (
     <div className="text-center py-12">
       <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-600 border border-slate-200">
@@ -183,6 +184,7 @@ function EmptyCard({ onAdd }: { onAdd: () => void }) {
       <p className="mt-1 text-sm text-slate-600 mb-4">
         أضف أول جلسة لهذه القضية.
       </p>
+      {onAdd && (
       <button
         onClick={onAdd}
         className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 transition"
@@ -190,6 +192,7 @@ function EmptyCard({ onAdd }: { onAdd: () => void }) {
         <Plus size={16} />
         إضافة جلسة
       </button>
+      )}
     </div>
   );
 }
@@ -200,11 +203,15 @@ function SessionCard({
   onEdit,
   onView,
   onDelete,
+  canEdit,
+  canDelete,
 }: {
   session: SessionListItem;
   onEdit: (id: number) => void;
   onView: (session: SessionListItem) => void;
   onDelete: (id: number, name: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -253,6 +260,7 @@ function SessionCard({
                     <Eye size={16} className="text-blue-600" />
                     عرض التفاصيل
                   </button>
+                  {canEdit && (
                   <button
                     onClick={() => {
                       onEdit(session.id);
@@ -263,17 +271,22 @@ function SessionCard({
                     <Edit size={16} className="text-amber-600" />
                     تعديل
                   </button>
-                  <hr className="my-1 border-slate-100" />
-                  <button
-                    onClick={() => {
-                      onDelete(session.id, session.caseName);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                    حذف
-                  </button>
+                  )}
+                  {canDelete && (
+                  <>
+                    <hr className="my-1 border-slate-100" />
+                    <button
+                      onClick={() => {
+                        onDelete(session.id, session.caseName);
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                      حذف
+                    </button>
+                  </>
+                  )}
                 </div>
               </>
             )}
@@ -496,6 +509,7 @@ interface CaseSessionsProps {
 /* ========== Main Component ========== */
 export default function CaseSessions({ caseId }: CaseSessionsProps) {
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -627,6 +641,7 @@ export default function CaseSessions({ caseId }: CaseSessionsProps) {
               />
               تحديث
             </button>
+            {can.canCreateSession() && (
             <button
               onClick={() => setShowAddModal(true)}
               className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 transition"
@@ -634,6 +649,7 @@ export default function CaseSessions({ caseId }: CaseSessionsProps) {
               <Plus size={16} />
               إضافة جلسة
             </button>
+            )}
           </div>
         </div>
 
@@ -649,7 +665,7 @@ export default function CaseSessions({ caseId }: CaseSessionsProps) {
               }
             />
           ) : sessions.length === 0 ? (
-            <EmptyCard onAdd={() => setShowAddModal(true)} />
+            <EmptyCard onAdd={can.canCreateSession() ? () => setShowAddModal(true) : undefined} />
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {sessions.map((session) => (
@@ -659,6 +675,8 @@ export default function CaseSessions({ caseId }: CaseSessionsProps) {
                   onEdit={handleEdit}
                   onView={handleView}
                   onDelete={handleDeleteClick}
+                  canEdit={can.canUpdateSession()}
+                  canDelete={can.canDeleteSession()}
                 />
               ))}
             </div>

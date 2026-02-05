@@ -34,6 +34,7 @@ import {
 import AddTaskForm from "@/features/tasks/components/AddTaskForm";
 import EditTaskForm from "@/features/tasks/components/EditTaskForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 import type {
   GetTasksQuery,
   TaskDto,
@@ -365,6 +366,7 @@ function EmptyState() {
 }
 
 export default function TasksPage() {
+  const { can } = usePermissions();
   const [filters, setFilters] = useState<GetTasksQuery>(DEFAULT_FILTERS);
 
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
@@ -509,7 +511,7 @@ export default function TasksPage() {
         icon={CheckSquare}
         isFetching={isFetching}
         countLabel={`${totalCount} مهمة`}
-        onAdd={() => setShowAddTaskModal(true)}
+        onAdd={can.canCreateTask() ? () => setShowAddTaskModal(true) : undefined}
         addButtonLabel="مهمة جديدة"
       />
 
@@ -816,6 +818,7 @@ export default function TasksPage() {
                           <Eye size={14} />
                         </IconButton>
 
+                        {can.canUpdateTask() && (
                         <IconButton
                           title="تعديل"
                           variant="purple"
@@ -826,8 +829,9 @@ export default function TasksPage() {
                         >
                           <Edit size={16} />
                         </IconButton>
+                        )}
 
-                        {!filters.isDeleted && (
+                        {!filters.isDeleted && can.canDeleteTask() && (
                           <IconButton
                             title="أرشفة"
                             variant="red"

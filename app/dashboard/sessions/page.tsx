@@ -37,6 +37,7 @@ import AddSessionForm from "@/features/sessions/components/AddSessionForm";
 import EditSessionForm from "@/features/sessions/components/EditSessionForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import { usePermissions } from "@/features/permissions/hooks/usePermissions";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 import type {
   GetSessionsQuery,
   SessionListItem,
@@ -399,12 +400,16 @@ export default function SessionsPage() {
 
   const { data: sessionTypes = [] } = useSessionTypes();
   const { data: sessionStatuses = [] } = useSessionStatuses();
+  const confirm = useConfirm();
   const softDeleteMutation = useSoftDeleteSession();
 
   const handleSoftDelete = (id: number, caseName: string) => {
-    if (window.confirm(`هل تريد حذف جلسة القضية "${caseName}"؟`)) {
-      softDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف الجلسة",
+      description: `هل تريد حذف جلسة القضية "${caseName}"؟`,
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && softDeleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

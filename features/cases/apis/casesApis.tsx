@@ -36,6 +36,8 @@ import {
   CASE_RESOURCES_PATH,
   CASE_DROPDOWN_PATH,
   CASE_TOTAL_FINANCE_PATH,
+  CHECK_CASE_NAME_EXISTS_PATH,
+  CHECK_CASE_NUMBER_EXISTS_PATH,
 } from "@/features/cases/PATHES";
 import apiClient from "@/lib/apiClient";
 
@@ -200,5 +202,31 @@ export async function getCaseResources(
 // GET /Finance/cases - Get case total finance
 export async function getCaseTotalFinance(): Promise<GetCaseTotalFinanceResponse> {
   const response = await apiClient.get<GetCaseTotalFinanceResponse>(CASE_TOTAL_FINANCE_PATH);
+  return response.data;
+}
+
+// ===========================
+// GET /Case/check-name-exists
+// ===========================
+export type CheckExistsResponse = {
+  succeeded: boolean;
+  message: string;
+  data: boolean;
+};
+
+export async function checkCaseNameExists(name: string): Promise<CheckExistsResponse> {
+  const response = await apiClient.get<CheckExistsResponse>(CHECK_CASE_NAME_EXISTS_PATH, {
+    params: { name },
+  });
+  return response.data;
+}
+
+// ===========================
+// GET /Case/check-casenumber-exists
+// ===========================
+export async function checkCaseNumberExists(caseNumber: string): Promise<CheckExistsResponse> {
+  const response = await apiClient.get<CheckExistsResponse>(CHECK_CASE_NUMBER_EXISTS_PATH, {
+    params: { caseNumber },
+  });
   return response.data;
 }

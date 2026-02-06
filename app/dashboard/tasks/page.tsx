@@ -35,6 +35,7 @@ import AddTaskForm from "@/features/tasks/components/AddTaskForm";
 import EditTaskForm from "@/features/tasks/components/EditTaskForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import { usePermissions } from "@/features/permissions/hooks/usePermissions";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 import type {
   GetTasksQuery,
   TaskDto,
@@ -389,14 +390,16 @@ export default function TasksPage() {
 
   const dashboard = dashboardData?.data;
 
+  const confirm = useConfirm();
   const softDeleteMutation = useSoftDeleteTask();
 
   const handleSoftDelete = (id: number, title: string) => {
-    if (
-      window.confirm(`هل تريد أرشفة المهمة "${title}"؟\nيمكن استعادتها لاحقاً.`)
-    ) {
-      softDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "أرشفة المهمة",
+      description: `هل تريد أرشفة المهمة "${title}"؟\nيمكن استعادتها لاحقاً.`,
+      confirmText: "أرشفة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && softDeleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

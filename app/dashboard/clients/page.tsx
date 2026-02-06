@@ -36,7 +36,9 @@ import AddClientForm from "@/features/clients/components/AddClientForm";
 import EditClientForm from "@/features/clients/components/EditClientForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import { usePermissions } from "@/features/permissions/hooks/usePermissions";
-
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
+import { useSelector } from "react-redux";
+import { selectUserProfile } from "@/features/userprofile/userProfileSlice";
 import type {
   ClientsQueryParams,
   ClientSummary,
@@ -347,7 +349,8 @@ function clientTypeBadge(value: string) {
 export default function ClientsPage() {
   const router = useRouter();
   const { can } = usePermissions();
-
+  const userProfile = useSelector(selectUserProfile);
+  const isOfficeAdmin = userProfile.role === "OfficeAdmin";
   const [filters, setFilters] = useState<ClientsQueryParams>(DEFAULT_FILTERS);
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -394,33 +397,38 @@ export default function ClientsPage() {
 
   const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
+  const confirm = useConfirm();
   const handlePageChange = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages) return;
     setFilters((prev) => ({ ...prev, pageNumber: nextPage }));
   };
 
   const handleSoftDelete = (id: number, name: string) => {
-    if (
-      window.confirm(`هل تريد أرشفة العميل "${name}"؟\nيمكن استعادته لاحقاً.`)
-    ) {
-      softDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "أرشفة العميل",
+      description: `هل تريد أرشفة العميل "${name}"؟\nيمكن استعادته لاحقاً.`,
+      confirmText: "أرشفة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && softDeleteMutation.mutate(id));
   };
 
   const handleHardDelete = (id: number, name: string) => {
-    if (
-      window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف العميل "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
-      )
-    ) {
-      hardDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف نهائي",
+      description: `⚠️ تحذير: هل أنت متأكد من حذف العميل "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
+      confirmText: "حذف نهائياً",
+      cancelText: "إلغاء",
+      variant: "danger",
+    }).then((ok) => ok && hardDeleteMutation.mutate(id));
   };
 
   const handleRestore = (id: number, name: string) => {
-    if (window.confirm(`هل تريد استعادة العميل "${name}"؟`)) {
-      restoreMutation.mutate(id);
-    }
+    confirm({
+      title: "استعادة العميل",
+      description: `هل تريد استعادة العميل "${name}"؟`,
+      confirmText: "استعادة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && restoreMutation.mutate(id));
   };
 
   return (
@@ -729,7 +737,7 @@ export default function ClientsPage() {
                     <td className="px-6 py-5">
                       <button
                         onClick={() =>
-                          router.push(`/dashboard/clients/${client.id}`)
+                          can.canViewClients() && router.push(`/dashboard/clients/${client.id}`)
                         }
                         className="flex items-center gap-3 max-w-90 cursor-pointer"
                       >
@@ -782,6 +790,7 @@ export default function ClientsPage() {
                     {/* Actions */}
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-center gap-2">
+                        {can.canViewClients() && (
                         <IconButton
                           title="عرض"
                           onClick={() =>
@@ -790,6 +799,7 @@ export default function ClientsPage() {
                         >
                           <Eye size={16} strokeWidth={2.5} />
                         </IconButton>
+                        )}
 
                         {can.canUpdateClient() && (
                         <IconButton

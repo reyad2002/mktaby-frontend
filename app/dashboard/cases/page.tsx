@@ -39,6 +39,9 @@ import {
 import EditCaseForm from "@/features/cases/components/EditCaseForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
 import { usePermissions } from "@/features/permissions/hooks/usePermissions";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
+import { useSelector } from "react-redux";
+import { selectUserProfile } from "@/features/userprofile/userProfileSlice";
 
 import type {
   GetCasesQuery,
@@ -341,6 +344,8 @@ function IconButton({
 
 export default function CasesPage() {
   const router = useRouter();
+  const userProfile = useSelector(selectUserProfile);
+  const isOfficeAdmin = userProfile.role === "OfficeAdmin";
   const { can } = usePermissions();
 
   const [filters, setFilters] = useState<GetCasesQuery>(DEFAULT_FILTERS);
@@ -393,6 +398,7 @@ export default function CasesPage() {
     }));
   };
 
+  const confirm = useConfirm();
   const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
   const handlePageChange = (nextPage: number) => {
@@ -401,45 +407,50 @@ export default function CasesPage() {
   };
 
   const handleSoftDelete = (id: number, name: string) => {
-    if (
-      window.confirm(`هل تريد حذف القضية "${name}"؟\nيمكن استعادتها لاحقاً.`)
-    ) {
-      softDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف القضية",
+      description: `هل تريد حذف القضية "${name}"؟\nيمكن استعادتها لاحقاً.`,
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && softDeleteMutation.mutate(id));
   };
 
   const handleHardDelete = (id: number, name: string) => {
-    if (
-      window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف القضية "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
-      )
-    ) {
-      hardDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف نهائي",
+      description: `⚠️ تحذير: هل أنت متأكد من حذف القضية "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
+      confirmText: "حذف نهائياً",
+      cancelText: "إلغاء",
+      variant: "danger",
+    }).then((ok) => ok && hardDeleteMutation.mutate(id));
   };
 
   const handleRestore = (id: number, name: string) => {
-    if (window.confirm(`هل تريد استعادة القضية "${name}"؟`)) {
-      restoreMutation.mutate(id);
-    }
+    confirm({
+      title: "استعادة القضية",
+      description: `هل تريد استعادة القضية "${name}"؟`,
+      confirmText: "استعادة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && restoreMutation.mutate(id));
   };
 
   const handleArchive = (id: number, name: string) => {
-    if (
-      window.confirm(
-        `هل تريد أرشفة القضية "${name}"؟\nيمكن إلغاء الأرشفة لاحقاً.`,
-      )
-    ) {
-      archiveMutation.mutate(id);
-    }
+    confirm({
+      title: "أرشفة القضية",
+      description: `هل تريد أرشفة القضية "${name}"؟\nيمكن إلغاء الأرشفة لاحقاً.`,
+      confirmText: "أرشفة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && archiveMutation.mutate(id));
   };
 
   const handleUnarchive = (id: number, name: string) => {
-    if (window.confirm(`هل تريد إلغاء أرشفة القضية "${name}"؟`)) {
-      unarchiveMutation.mutate(id);
-    }
+    confirm({
+      title: "إلغاء الأرشفة",
+      description: `هل تريد إلغاء أرشفة القضية "${name}"؟`,
+      confirmText: "إلغاء الأرشفة",
+      cancelText: "تراجع",
+    }).then((ok) => ok && unarchiveMutation.mutate(id));
   };
-
   // const client = clientResponse?.data;
   return (
     <section className="space-y-6 relative ">
@@ -810,7 +821,7 @@ export default function CasesPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          router.push(`/dashboard/clients/${caseItem.clientId}`)
+                          can.canViewClients() && router.push(`/dashboard/clients/${caseItem.clientId}`)
                         }
                         className="hover:text-primary cursor-pointer underline hover:underline transition-colors "
                       >

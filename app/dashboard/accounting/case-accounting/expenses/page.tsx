@@ -39,6 +39,7 @@ import AddCaseExpenseForm from "@/features/accounting/components/AddCaseExpenseF
 import EditCaseExpenseForm from "@/features/accounting/components/EditCaseExpenseForm";
 import CaseAccountingDetails from "@/features/accounting/components/CaseAccountingDetails";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 import type {
   GetCaseExpensesQuery,
   CaseExpenseDto,
@@ -275,14 +276,14 @@ export default function CaseExpensesPage() {
     },
   });
 
+  const confirm = useConfirm();
   const handleDelete = (id: number) => {
-    if (
-      window.confirm(
-        `هل أنت متأكد من حذف هذا المصروف؟\nلا يمكن التراجع عن هذا الإجراء.`
-      )
-    ) {
-      deleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف المصروف",
+      description: "هل أنت متأكد من حذف هذا المصروف؟\nلا يمكن التراجع عن هذا الإجراء.",
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && deleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

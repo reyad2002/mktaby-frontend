@@ -39,6 +39,7 @@ import AddCaseFeeForm from "@/features/accounting/components/AddCaseFeeForm";
 import EditCaseFeeForm from "@/features/accounting/components/EditCaseFeeForm";
 import CaseAccountingDetails from "@/features/accounting/components/CaseAccountingDetails";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 import type {
   GetCaseFeesQuery,
   CaseFeeDto,
@@ -274,14 +275,14 @@ export default function CaseFeesPage() {
     },
   });
 
+  const confirm = useConfirm();
   const handleDelete = (id: number) => {
-    if (
-      window.confirm(
-        `هل أنت متأكد من حذف هذه الرسوم؟\nلا يمكن التراجع عن هذا الإجراء.`
-      )
-    ) {
-      deleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف الرسوم",
+      description: "هل أنت متأكد من حذف هذه الرسوم؟\nلا يمكن التراجع عن هذا الإجراء.",
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && deleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

@@ -20,6 +20,7 @@ import {
 import AddPermissionForm from "@/features/permissions/components/AddPermissionForm";
 import EditPermissionForm from "@/features/permissions/components/EditPermissionForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 import type {
   PermissionsQueryParams,
   PermissionSummary,
@@ -85,12 +86,16 @@ export default function PermissionsPage() {
   const [editPermissionId, setEditPermissionId] = useState<number | null>(null);
 
   // Delete permission using hook
+  const confirm = useConfirm();
   const deleteMutation = useDeletePermission();
 
   const handleDelete = (id: number, name: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف الصلاحية "${name}"؟`)) {
-      deleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف الصلاحية",
+      description: `هل أنت متأكد من حذف الصلاحية "${name}"؟`,
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && deleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

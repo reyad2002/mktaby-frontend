@@ -39,6 +39,7 @@ import type {
   UpdateOfficeExpenseRequest,
 } from "@/features/accounting/types/OfficeExpensesTypes";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 
 // ========== Constants ==========
 const DEFAULT_FILTERS: GetOfficeExpensesQuery = {
@@ -550,10 +551,14 @@ export default function OfficeExpensesPage() {
     },
   });
 
+  const confirm = useConfirm();
   const handleDelete = (id: number, title: string) => {
-    if (window.confirm(`هل تريد حذف المصروف "${title}"؟`)) {
-      deleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف المصروف",
+      description: `هل تريد حذف المصروف "${title}"؟`,
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && deleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

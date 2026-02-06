@@ -155,10 +155,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
               const ActionIcon = action.icon;
               const variants = {
                 primary:
-                  "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200",
+                  "bg-primary cursor-pointer text-white hover:bg-primary-dark hover:shadow-lg hover:shadow-primary/20",
                 ghost:
-                  "border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200",
+                  "border border-gray-200 cursor-pointer text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                secondary: "bg-gray-100 cursor-pointer text-gray-700 hover:bg-gray-200",
               };
 
               return (

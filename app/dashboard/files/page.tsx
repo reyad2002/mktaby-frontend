@@ -45,6 +45,7 @@ import {
 import { useRouter } from "next/navigation";
 import UploadFiles from "@/features/fileAtt/components/uploadFiles";
 import { usePermissions } from "@/features/permissions/hooks/usePermissions";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 // ===== helpers =====
 const formatDateAr = (date?: string | null) =>
   date ? new Date(date).toLocaleDateString("ar-EG") : "—";
@@ -595,6 +596,7 @@ function CreateFolderForm({
 // }
 
 export default function Page() {
+  const confirm = useConfirm();
   // بسيط: بحث + pagination (اختياريين)
   const [search, setSearch] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
@@ -865,15 +867,17 @@ export default function Page() {
                                 title="حذف مؤقت"
                                 disabled={softDeleteFile.isPending}
                                 onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      `هل تريد حذف "${it.name}" مؤقتاً؟`
-                                    )
-                                  ) {
+                                  confirm({
+                                    title: "حذف الملف",
+                                    description: `هل تريد حذف "${it.name}" مؤقتاً؟`,
+                                    confirmText: "حذف",
+                                    cancelText: "إلغاء",
+                                  }).then((ok) =>
+                                    ok &&
                                     softDeleteFile.mutate(it.id, {
                                       onSuccess: () => refetch(),
-                                    });
-                                  }
+                                    })
+                                  );
                                 }}
                                 className="group inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-orange-200/70 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-all focus:outline-none focus:ring-4 focus:ring-orange-200/70 active:scale-[0.98] disabled:opacity-50"
                               >
@@ -946,15 +950,17 @@ export default function Page() {
                                   title="حذف مؤقت"
                                   disabled={softDeleteFolder.isPending}
                                   onClick={() => {
-                                    if (
-                                      window.confirm(
-                                        `هل تريد حذف "${it.name}" مؤقتاً؟`
-                                      )
-                                    ) {
+                                    confirm({
+                                      title: "حذف المجلد",
+                                      description: `هل تريد حذف "${it.name}" مؤقتاً؟`,
+                                      confirmText: "حذف",
+                                      cancelText: "إلغاء",
+                                    }).then((ok) =>
+                                      ok &&
                                       softDeleteFolder.mutate(it.id, {
                                         onSuccess: () => refetch(),
-                                      });
-                                    }
+                                      })
+                                    );
                                   }}
                                   className="group inline-flex items-center justify-center w-10 h-10 rounded-2xl border border-orange-200/70 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-all focus:outline-none focus:ring-4 focus:ring-orange-200/70 active:scale-[0.98] disabled:opacity-50"
                                 >

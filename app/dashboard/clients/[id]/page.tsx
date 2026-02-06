@@ -39,6 +39,7 @@ import type { GetCasesQuery } from "@/features/cases/types/casesTypes";
 import { useClientFinance } from "@/features/clients/hooks/clientsHooks";
 import { DollarSign, TrendingUp, Wallet } from "lucide-react";
 import FileManager from "@/features/fileAtt/components/FileManager";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 
 type EmployeeFormState = {
   name: string;
@@ -223,11 +224,20 @@ export default function ClientDetailsPage() {
     }
   };
 
+  const confirm = useConfirm();
+
   const handleDeleteEmployee = (employeeId: number, employeeName: string) => {
-    if (window.confirm(`هل تريد حذف الموظف "${employeeName}"؟`)) {
-      setDeletingEmployeeId(employeeId);
-      deleteEmployeeMutation.mutate(employeeId);
-    }
+    confirm({
+      title: "حذف الموظف",
+      description: `هل تريد حذف الموظف "${employeeName}"؟`,
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => {
+      if (ok) {
+        setDeletingEmployeeId(employeeId);
+        deleteEmployeeMutation.mutate(employeeId);
+      }
+    });
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -244,23 +254,22 @@ export default function ClientDetailsPage() {
   };
 
   const handleSoftDelete = () => {
-    if (
-      window.confirm(
-        `هل تريد أرشفة العميل "${client?.name}"؟\nيمكن استعادته لاحقاً.`,
-      )
-    ) {
-      softDeleteMutation.mutate(clientId);
-    }
+    confirm({
+      title: "أرشفة العميل",
+      description: `هل تريد أرشفة العميل "${client?.name}"؟\nيمكن استعادته لاحقاً.`,
+      confirmText: "أرشفة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && softDeleteMutation.mutate(clientId));
   };
 
   const handleHardDelete = () => {
-    if (
-      window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف العميل "${client?.name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
-      )
-    ) {
-      hardDeleteMutation.mutate(clientId);
-    }
+    confirm({
+      title: "حذف نهائي",
+      description: `⚠️ تحذير: هل أنت متأكد من حذف العميل "${client?.name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
+      confirmText: "حذف نهائياً",
+      cancelText: "إلغاء",
+      variant: "danger",
+    }).then((ok) => ok && hardDeleteMutation.mutate(clientId));
   };
 
   const isCompany = client?.clientType?.value === "Company";

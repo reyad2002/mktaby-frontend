@@ -34,6 +34,7 @@ import { getCaseFees } from "@/features/accounting/apis/CaseFeesApi";
 import AddFeePaymentForm from "@/features/accounting/components/AddFeePaymentForm";
 import EditFeePaymentForm from "@/features/accounting/components/EditFeePaymentForm";
 import PageHeader from "@/shared/components/dashboard/PageHeader";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 import type {
   GetFeePaymentsQuery,
   FeePaymentDto,
@@ -296,14 +297,14 @@ export default function FeePaymentsPage() {
     },
   });
 
+  const confirm = useConfirm();
   const handleDelete = (id: number) => {
-    if (
-      window.confirm(
-        `هل أنت متأكد من حذف هذه الدفعة؟\nلا يمكن التراجع عن هذا الإجراء.`
-      )
-    ) {
-      deleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف الدفعة",
+      description: "هل أنت متأكد من حذف هذه الدفعة؟\nلا يمكن التراجع عن هذا الإجراء.",
+      confirmText: "حذف",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && deleteMutation.mutate(id));
   };
 
   const queryParams = useMemo(() => {

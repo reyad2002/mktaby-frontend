@@ -16,6 +16,7 @@ import {
   useRestoreCase,
   useSoftDeleteCase,
 } from "../hooks/caseHooks";
+import { useConfirm } from "@/shared/providers/ConfirmProvider";
 const formatDateAr = (date?: string | null) =>
   date ? new Date(date).toLocaleDateString("ar-EG") : "—";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,31 +34,36 @@ const CasesTable = ({
   isFetching: boolean;
 }) => {
   const router = useRouter();
+  const confirm = useConfirm();
   const [editCaseId, setEditCaseId] = useState<number | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const restoreMutation = useRestoreCase();
   const hardDeleteMutation = useHardDeleteCase();
   const softDeleteMutation = useSoftDeleteCase();
   const handleRestore = (id: number, name: string) => {
-    if (window.confirm(`هل تريد استعادة القضية "${name}"؟`)) {
-      restoreMutation.mutate(id);
-    }
+    confirm({
+      title: "استعادة القضية",
+      description: `هل تريد استعادة القضية "${name}"؟`,
+      confirmText: "استعادة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && restoreMutation.mutate(id));
   };
   const handleHardDelete = (id: number, name: string) => {
-    if (
-      window.confirm(
-        `⚠️ تحذير: هل أنت متأكد من حذف القضية "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`
-      )
-    ) {
-      hardDeleteMutation.mutate(id);
-    }
+    confirm({
+      title: "حذف نهائي",
+      description: `⚠️ تحذير: هل أنت متأكد من حذف القضية "${name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء!`,
+      confirmText: "حذف نهائياً",
+      cancelText: "إلغاء",
+      variant: "danger",
+    }).then((ok) => ok && hardDeleteMutation.mutate(id));
   };
-   const handleSoftDelete = (id: number, name: string) => {
-    if (
-      window.confirm(`هل تريد أرشفة القضية "${name}"؟\nيمكن استعادتها لاحقاً.`)
-    ) {
-      softDeleteMutation.mutate(id);
-    }
+  const handleSoftDelete = (id: number, name: string) => {
+    confirm({
+      title: "أرشفة القضية",
+      description: `هل تريد أرشفة القضية "${name}"؟\nيمكن استعادتها لاحقاً.`,
+      confirmText: "أرشفة",
+      cancelText: "إلغاء",
+    }).then((ok) => ok && softDeleteMutation.mutate(id));
   };
   return (
     <div className="relative overflow-hidden rounded-3xl border border-gray-200/60 bg-white/80 backdrop-blur-xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)]">
